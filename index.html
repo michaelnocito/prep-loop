@@ -159,6 +159,23 @@ html[data-theme="dark"] .pmap-node.current .pmap-dot{color:#082032}
 .j-entry b{color:var(--ink)}
 .j-next{font-style:italic;opacity:.75}
 .j-next:before{background:var(--surf2);border:1px solid var(--line)}
+/* auto misses */
+.amiss{border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px;background:var(--bg)}
+.amiss .am-top{display:flex;align-items:center;gap:8px}
+.amiss .am-title{font-weight:600;font-size:13px;flex:1}
+.amiss .am-qs{margin:6px 0 0;font-size:12.5px;color:var(--dim);list-style:disc;padding-left:18px}
+.amiss .am-link{font-size:12px;color:var(--accent);text-decoration:none;white-space:nowrap}
+.amiss .am-link:hover{text-decoration:underline}
+.miss-dose{font-size:11px;color:var(--dim);font-family:var(--font-mono,monospace);margin-bottom:8px}
+/* clean-run celebration */
+@keyframes pl-pop{0%{transform:scale(.2) rotate(-20deg);opacity:0}60%{transform:scale(1.25) rotate(6deg)}100%{transform:scale(1) rotate(0)}}
+@keyframes pl-ring{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%, transparent)}100%{box-shadow:0 0 0 26px transparent}}
+@keyframes pl-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.clean-run{text-align:center;padding:18px 10px;border:1px dashed var(--accent);border-radius:var(--r2);background:var(--accent-soft)}
+.clean-run .cr-ico{font-size:40px;display:inline-block;animation:pl-pop .6s cubic-bezier(.2,1.6,.4,1) both,pl-float 2.4s ease-in-out .7s infinite}
+.clean-run .cr-ring{width:64px;height:64px;margin:0 auto 6px;border-radius:50%;display:flex;align-items:center;justify-content:center;animation:pl-ring 1.1s ease-out .2s 2}
+.clean-run .cr-title{font-weight:800;font-family:var(--font-display);margin-top:4px}
+.clean-run .cr-sub{font-size:13px;color:var(--dim);margin-top:2px}
 /* misc */
 .miss-row{display:flex;gap:8px;margin-top:10px}
 .miss-row input{flex:1;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:8px 10px;font-size:14px}
@@ -247,7 +264,9 @@ html[data-theme="dark"] #toast{color:#082032}
       </div>
       <div class="panel" style="margin-top:14px">
         <h2>Miss list</h2>
-        <p class="subtle">Anything you got wrong today. The path ends with a redo-your-misses step.</p>
+        <p class="subtle" style="margin-bottom:10px">Auto-filled from the questions the kits flagged when you rated a lesson "Not yet" or "Almost". The path's recall sweeps pull from here.</p>
+        <div id="miss-auto"></div>
+        <p class="subtle" style="margin-top:12px">Add your own from sims, games and mocks:</p>
         <div class="miss-row"><input id="miss-in" placeholder="e.g. LEFT JOIN null trap"><button class="btn-ghost btn-sm" id="miss-add">Add</button></div>
         <ul class="miss-list" id="miss-list"></ul>
       </div>
@@ -315,6 +334,46 @@ function lessonURL(kit,firstId){
   return KIT+m.path+'/'+(m.deep&&firstId!=null?('#lesson-'+firstId):'');
 }
 
+// ---------- auto miss list (reads the kits' spaced-recall queues) ----------
+const RECALL_PREFIX={sql:'sqlkit',excel:'epk',powerbi:'pbikt',tableau:'tpk',python:'ppk',stats:'spk'};
+const LESSON_TITLES={
+ sql:{101:'What a Database Is',105:'Set Up a SQL Database',1:'SELECT & FROM',2:'WHERE',104:'A Query Returns a Table',3:'ORDER BY & LIMIT',102:'The Grain of a Table',5:'COUNT, SUM & GROUP BY',7:'HAVING & Duplicates',8:'CASE & COALESCE',103:'Keys & Why Tables Relate',4:'INNER JOIN',6:'LEFT JOIN & NULLs',13:'RIGHT & FULL OUTER JOIN',14:'Date Functions',9:'Subqueries',11:'CTEs',10:'Window Functions',12:'Reconciliation Queries',15:'SQL Indexing',16:'Temp Tables vs Views',501:'Profiling: Counts & Uniqueness',502:'Profiling: Finding Duplicates',503:'Profiling: Nulls & Format Chaos',504:'Cleansing: Standardize Text',505:'Mapping: CASE WHEN',506:'Type Coercion & Defaults',507:'Validation: Row Counts',508:'Reconciliation: What Didn’t Make It',601:'Define the Metric First',602:'Segment Customers with CASE',603:'MoM Growth with LAG',604:'Running Totals',605:'Funnel Conversion',606:'Cohort Retention',701:'Build the P&L',702:'Margins',703:'Liquidity & Leverage',704:'NPV',705:'Budget vs Actual',706:'Unit Economics',801:'Profile the Data First',802:'Validate the Grain',803:'Distribution & Outliers',804:'Pareto',805:'Correlation ≠ Causation',806:'Sanity-Check & Reconcile'},
+ excel:{101:'How a Spreadsheet Is Built',102:'Cell References & the A1 Grid',103:'Text vs Number (& Dates)',104:'What a Formula Actually Is',1:'Your First Formula',2:'Make Decisions with IF',3:'Lookup Magic: VLOOKUP',4:'Lookup Evolved: XLOOKUP',5:'Count & Sum with Conditions',6:'What Is a PivotTable?',7:'Build Your First Pivot',8:'Slicers, Sorting & Grouping',9:'Spot & Fix Dirty Data',10:'Text Functions',11:'Dates and Numbers',12:'Defensive Formulas: IFERROR',13:'Excel Tables (Ctrl+T)',14:'Nested IF and IFS',15:'INDEX + MATCH',16:'SUMPRODUCT',17:'Your First Chart',18:'Conditional Formatting',19:'Data Validation',20:'Named Ranges',21:'Power Query Basics',22:'Dynamic Arrays',23:'Shortcuts & Speed',24:'Protecting Your Work',521:'Profiling a Source Sheet',522:'Finding & Removing Duplicates',523:'Standardizing Text',524:'Type Coercion',525:'Mapping & Reconciliation'},
+ powerbi:{101:'How Power BI Sees Data',102:'Data Types & Why They Matter',103:'What “Aggregate” Means',104:'Load vs Shape vs Analyze',1:'The Power BI Interface',2:'Connecting to Data',3:'Your First Visual',4:'Relationships & the Data Model',5:'Calculated Columns vs Measures',6:'Basic DAX Aggregations',7:'CALCULATE & Filter Context',8:'Time Intelligence',9:'Slicers & Filters',10:'Drill-Through & Cross-Filtering',11:'Dashboard Design',12:'Publishing & Sharing',401:'Profiling Source Data',402:'Removing Duplicates',403:'Cleansing Text',404:'Type Coercion & Nulls',405:'Validation & Reconciliation'},
+};
+function lessonTitle(kit,id){return (LESSON_TITLES[kit]||{})[id]||('Lesson '+id);}
+function getKitMisses(){
+  const out=[];
+  Object.entries(RECALL_PREFIX).forEach(([kit,pre])=>{
+    let q=[];try{q=JSON.parse(localStorage.getItem(pre+'-recalls')||'[]');}catch(e){}
+    const bySrc={};
+    q.forEach(e=>{
+      const k=e.srcId==null?'?':e.srcId;
+      bySrc[k]=bySrc[k]||{kit,srcId:e.srcId,cues:[],count:0};
+      bySrc[k].count++;
+      (e.cues||[]).forEach(c=>{
+        const qq=typeof c==='string'?c:c.q;
+        if(qq&&!bySrc[k].cues.includes(qq))bySrc[k].cues.push(qq);
+      });
+    });
+    Object.values(bySrc).forEach(m=>{
+      m.title=lessonTitle(kit,m.srcId);
+      m.link=KIT_META[kit].deep&&m.srcId!=null?lessonURL(kit,m.srcId):KIT+KIT_META[kit].path+'/';
+      out.push(m);
+    });
+  });
+  return out;
+}
+const MISS_DOSE=8; // successive relearning: a few well-spaced correct recalls beat marathon review (Rawson & Dunlosky 2011)
+const CLEAN_LINES=[
+ 'Zero misses. The recall queue checked under the bed. Nothing there.',
+ 'No misses found. Somewhere, a NULL weeps alone.',
+ 'Clean sweep. Your misses LEFT JOINed to a table with no matches.',
+ 'Nothing to review. The bugs heard you were coming and dropped their own table.',
+ 'Recall queue: empty. Your brain: SELECT * FROM confidence;',
+];
+function cleanLine(){return CLEAN_LINES[Math.floor(Date.now()/864e5)%CLEAN_LINES.length];}
+
 // ---------- Data Analyst path ----------
 // type: 'lesson' (kit lessons, auto-done from kit progress) | 'app' (manual done)
 const PATH=[
@@ -335,6 +394,7 @@ const PATH=[
   {id:'g-ssarch',   type:'app',    url:BASE+'spreadsheet-archaeology/', chip:'c-sim', min:28, title:'Spreadsheet Archaeology — one case', concepts:'Messy-workbook detective work, start to finish', cat:'excel'},
   {id:'xl-clean',   type:'lesson', kit:'excel', lessons:[9,12],  chip:'c-excel', min:20, title:'Dirty data',           concepts:'Spot & fix dirty data · IFERROR defensive formulas'},
   {id:'g-xlsprint', type:'app',    url:BASE+'excel-sales-sprint/', chip:'c-game', min:18, title:'Excel Sales Sprint',  concepts:'Speed reps against the clock', cat:'excel'},
+  {id:'miss-sweep', type:'miss',   chip:'c-mock', min:15, title:'Recall sweep #1', concepts:'Clear the questions the kits flagged as shaky — or celebrate a clean run', cat:'mock'},
  ]},
  {unit:'Unit 3 · One BI tool — pick your posting’s tool', icon:'📊', nodes:[
   {id:'pbi-core',   type:'lesson', kit:'powerbi', lessons:[2,4], chip:'c-bi', min:25, title:'Power BI core',          concepts:'Connecting to data · Relationships & the data model'},
@@ -348,7 +408,7 @@ const PATH=[
   {id:'g-dryrun2',  type:'app', url:BASE+'sql-dry-run/',       chip:'c-game', min:18, title:'SQL Dry Run — cold pass', concepts:'No notes; misses go on the miss list', cat:'sql'},
   {id:'mock-excel', type:'app', url:BASE+'excel-interview/',   chip:'c-mock', min:25, title:'Excel Interview mock',   concepts:'Dress rehearsal for a live Excel screen', cat:'mock'},
   {id:'g-nexus',    type:'app', url:BASE+'nexus-sql-mystery/', chip:'c-game', min:20, title:'NEXUS SQL Mystery',      concepts:'Fresh-context SQL test, one chapter', cat:'sql'},
-  {id:'redo-miss',  type:'app', url:null, local:'Open your miss list (right panel) and redo every item until each one is right twice in a row.', chip:'c-mock', min:25, title:'Redo your misses', concepts:'Highest-payoff final step: relearn only what you got wrong', cat:'mock'},
+  {id:'redo-miss',  type:'miss', chip:'c-mock', min:25, title:'Recall sweep #2 — final', concepts:'Highest-payoff final step: relearn only what you got wrong', cat:'mock'},
  ]},
 ];
 const ALL_NODES=PATH.flatMap(u=>u.nodes);
@@ -435,6 +495,7 @@ const BADGES=[
  {id:'path',   icon:'🏁', label:'Full Loop',       desc:'Complete the whole path',             prog:()=>[ALL_NODES.filter(nodeDone).length,ALL_NODES.length]},
  {id:'streak3',icon:'🔥', label:'Three-Peat',      desc:'3-day sitting streak',                prog:()=>[Math.min(3,streak()),3]},
  {id:'streak7',icon:'🌋', label:'Full Week',       desc:'7-day sitting streak',                prog:()=>[Math.min(7,streak()),7]},
+ {id:'clean',  icon:'🛡️', label:'Clean Sweep',  desc:'Hit a recall sweep with zero misses queued', prog:()=>[S.badgeMarks.clean?1:0,1]},
  {id:'early',  icon:'🌅', label:'Early Bird',   secret:true, desc:'A sitting before 8am',      prog:()=>[S.badgeMarks.early?1:0,1]},
  {id:'night',  icon:'🌙', label:'Night Owl',    secret:true, desc:'A sitting after 10pm',      prog:()=>[S.badgeMarks.night?1:0,1]},
  {id:'weekend',icon:'🧺', label:'Weekend Rep',  secret:true, desc:'A weekend sitting',         prog:()=>[S.badgeMarks.weekend?1:0,1]},
@@ -464,7 +525,7 @@ function toast(msg){
 function renderAll(){stampPathLog();renderStats();renderPath();renderFree();renderBadges();renderJournal();renderMisses();}
 // ---------- journey journal ----------
 const J_OPENERS=['From there you moved to','Next you took on','Then it was','You pushed on into','After that came','You carried it into'];
-const J_VERBS={lesson:'where you learned',app:'where you put it to work on'};
+const J_VERBS={lesson:'where you learned',app:'where you put it to work on',miss:'where you faced down'};
 function fmtDate(iso){const d=new Date(iso+'T12:00:00');return d.toLocaleDateString(undefined,{month:'short',day:'numeric'});}
 function renderJournal(){
   const el=$('journal');el.innerHTML='';
@@ -516,7 +577,7 @@ function renderPath(){
         <div style="flex:1">
           <div class="pmap-title"><span class="chip ${n.chip}">${n.type==='lesson'?n.kit.toUpperCase():(CAT_LABEL[n.cat]||'APP')}</span>${n.title}${auto?' <span class="auto-note">✓ synced from kit</span>':''}</div>
           <div class="pmap-sub">${n.concepts}</div>
-          <div class="pmap-meta">${n.min} min sitting${n.type==='lesson'?' · start: lesson '+n.lessons[0]+' · stop after: lesson '+n.lessons[n.lessons.length-1]:''}</div>
+          <div class="pmap-meta">${n.min} min sitting${n.type==='lesson'?' · start: lesson '+n.lessons[0]+' · stop after: lesson '+n.lessons[n.lessons.length-1]:''}${n.type==='miss'?' · '+(getKitMisses().length?getKitMisses().length+' topics queued right now':'queue is clean right now 🛡️'):''}</div>
           ${isCur?`<button class="btn btn-sm" data-go="${n.id}">▶ Start this sitting</button>`:''}
           ${!isDone&&!isCur?`<button class="btn-ghost btn-sm" data-go="${n.id}" style="margin-top:8px">Jump here</button>`:''}
           ${isDone&&S.pathDone.includes(n.id)?`<button class="btn-ghost btn-sm" data-undo="${n.id}" style="margin-top:8px">Undo</button>`:''}
@@ -542,7 +603,26 @@ function renderBadges(){
   if(secretHidden)el.insertAdjacentHTML('beforeend',
     `<div class="badge-tile secret"><div class="badge-ico">✨</div><div class="badge-name">${secretHidden} surprise badge${secretHidden>1?'s':''}</div><div class="badge-prog">found by playing</div></div>`);
 }
+function missCardHTML(m){
+  return `<div class="amiss">
+    <div class="am-top"><span class="chip ${CAT_CHIP[m.kit==='excel'?'excel':m.kit==='powerbi'||m.kit==='tableau'?'bi':m.kit==='python'||m.kit==='stats'?'py':'sql']}">${m.kit.toUpperCase()}</span>
+      <span class="am-title">${m.title}</span>
+      <a class="am-link" href="${m.link}" target="_blank" rel="noopener">Open lesson →</a></div>
+    ${m.cues.length?`<ul class="am-qs">${m.cues.map(q=>`<li>${q}</li>`).join('')}</ul>`:''}
+  </div>`;
+}
 function renderMisses(){
+  const auto=$('miss-auto');
+  const misses=getKitMisses();
+  if(!misses.length){
+    auto.innerHTML=`<div class="clean-run"><div class="cr-ring"><span class="cr-ico">🛡️</span></div>
+      <div class="cr-title">Clean run!</div><div class="cr-sub">${cleanLine()}</div></div>`;
+  }else{
+    const shown=misses.slice(0,MISS_DOSE);
+    auto.innerHTML=`<div class="miss-dose">${misses.length} topic${misses.length>1?'s':''} flagged by the kits · showing ${shown.length} — the right dose for one sitting</div>`
+      +shown.map(missCardHTML).join('')
+      +(misses.length>MISS_DOSE?`<div class="subtle">${misses.length-MISS_DOSE} more wait for the next sweep — spacing beats a marathon.</div>`:'');
+  }
   const ml=$('miss-list');ml.innerHTML='';
   (S.misses[todayKey()]||[]).forEach(m=>{const li=document.createElement('li');li.textContent=m;ml.appendChild(li);});
 }
@@ -606,10 +686,61 @@ function renderFree(){
 let timerInt=null,remaining=0,paused=false,active=null; // active={kind:'node'|'free', id|ix, min, name, ...}
 function startNode(id){
   const n=ALL_NODES.find(x=>x.id===id);if(!n)return;
+  if(n.type==='miss'){openMissSession(n);return;}
   const url=n.type==='lesson'?lessonURL(n.kit,n.lessons[0]):n.url;
   openSession({kind:'node',id:n.id,min:n.min,name:n.title,concepts:n.concepts,chip:n.chip,
     label:n.type==='lesson'?n.kit.toUpperCase():(CAT_LABEL[n.cat]||'APP'),url,local:n.local,
     stopNote:n.type==='lesson'?('Do lessons '+n.lessons.join(', ')+' then stop and hit Done.'):null});
+}
+function openMissSession(n){
+  active={kind:'node',id:n.id,min:n.min,name:n.title,chip:n.chip,label:'RECALL'};
+  $('s-chip').className='chip '+n.chip;$('s-chip').textContent='RECALL';
+  $('s-name').textContent=n.title;
+  $('s-concepts').textContent='Answer from memory first. Open the lesson only when you can’t.';
+  const fw=$('frame-wrap');fw.innerHTML='';
+  const misses=getKitMisses();
+  const manual=S.misses[todayKey()]||[];
+  const box=document.createElement('div');
+  box.style.cssText='height:100%;overflow:auto;padding:20px;max-width:760px;margin:0 auto';
+  if(!misses.length&&!manual.length){
+    S.badgeMarks.clean=true;save();checkBadges();
+    box.innerHTML=`<div class="clean-run" style="margin-top:8vh">
+      <div class="cr-ring"><span class="cr-ico">🛡️</span></div>
+      <div class="cr-title">Yay — you move on with no misses!</div>
+      <div class="cr-sub">${cleanLine()}</div>
+      <button class="btn" style="margin-top:16px" onclick="finishSitting(true)">Claim it and keep moving →</button>
+    </div>`;
+    fw.appendChild(box);
+    $('session').classList.remove('hidden');
+    clearInterval(timerInt);remaining=0;paused=true;renderTimer();
+    return;
+  }
+  const shown=misses.slice(0,MISS_DOSE);
+  box.innerHTML=`<h3 style="margin-bottom:4px">Recall sweep</h3>
+    <div class="miss-dose">${shown.length} kit topic${shown.length!==1?'s':''}${manual.length?' + '+manual.length+' of your own':''} · a topic clears for good after it comes back right on a later day, not just today</div>
+    ${shown.map(missCardHTML).join('')}
+    ${misses.length>MISS_DOSE?`<div class="subtle" style="margin-bottom:10px">${misses.length-MISS_DOSE} more topics wait for the next sweep — spacing beats a marathon.</div>`:''}
+    ${manual.length?`<h3 style="margin:14px 0 6px;font-size:15px">Your own misses</h3><ul class="am-qs">${manual.map(m=>`<li>${m}</li>`).join('')}</ul>`:''}`;
+  box.querySelectorAll('.am-link').forEach(a=>{
+    a.onclick=e=>{
+      e.preventDefault();
+      fw.innerHTML='';
+      const bar=document.createElement('div');
+      bar.style.cssText='padding:8px 12px;background:var(--panel);border-bottom:1px solid var(--line)';
+      bar.innerHTML='<button class="btn-ghost btn-sm">◀ Back to the sweep</button>';
+      bar.querySelector('button').onclick=()=>openMissSessionKeepTimer(n);
+      const f=document.createElement('iframe');f.src=a.href;f.style.cssText='width:100%;height:calc(100% - 42px);border:none;background:#fff';
+      fw.appendChild(bar);fw.appendChild(f);
+    };
+  });
+  fw.appendChild(box);
+  $('session').classList.remove('hidden');
+  beginTimer(n.min);
+}
+function openMissSessionKeepTimer(n){
+  const keep=remaining,kp=paused;
+  openMissSession(n);
+  if(getKitMisses().length||((S.misses[todayKey()]||[]).length)){remaining=keep;paused=kp;renderTimer();}
 }
 function startFree(){
   const ix=freeNextIx();if(ix<0)return;
