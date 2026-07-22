@@ -320,8 +320,8 @@ const KIT_META={
   excel:  {key:'epk',       path:'excel',   deep:true},
   powerbi:{key:'pbikt-v1',  path:'powerbi', deep:true},
   tableau:{key:'tpk',       path:'tableau', deep:true},
-  python: {key:'ppk',       path:'python',  deep:false},
-  stats:  {key:'spk',       path:'stats',   deep:false},
+  python: {key:'ppk',       path:'python',  deep:true},
+  stats:  {key:'spk',       path:'stats',   deep:true},
 };
 function kitDoneLessons(kit){
   try{
@@ -431,7 +431,8 @@ const ITEMS=[
  {id:'sql-sprint',   name:'SQL Sales Sprint',        cat:'sql',  url:BASE+'sql-sales-sprint/',       min:18, perDay:2, perWeek:3},
  {id:'excel-int',    name:'Excel Interview mock',    cat:'mock', url:BASE+'excel-interview/',        min:25, perDay:1, perWeek:2},
  {id:'nexus',        name:'NEXUS SQL Mystery',       cat:'sql',  url:BASE+'nexus-sql-mystery/',      min:20, perDay:1, perWeek:2},
- {id:'kit-py',       name:'Prep Kit — Python/Stats', cat:'py',   url:KIT+'python/',                  min:25, perDay:1, perWeek:2},
+ {id:'kit-py',       name:'Prep Kit — Python lesson',cat:'py',   url:KIT+'python/',                  min:25, perDay:1, perWeek:2},
+ {id:'kit-stats',    name:'Prep Kit — Stats lesson', cat:'py',   url:KIT+'stats/',                   min:25, perDay:1, perWeek:2},
  {id:'keygarden',    name:'Keygarden typing warm-up',cat:'warm', url:BASE+'keygarden/',              min:15, perDay:2, perWeek:5},
 ];
 const CAT_CHIP={sql:'c-sql',excel:'c-excel',bi:'c-bi',talk:'c-talk',mock:'c-mock',py:'c-bi',game:'c-game',warm:'c-game'};
