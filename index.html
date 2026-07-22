@@ -203,7 +203,7 @@ html[data-theme="dark"] #toast{color:#082032}
     <button data-mode="free">Unguided</button>
   </div>
   <div class="hdr-btns">
-    <span class="pill" id="prof-pill">choose role</span>
+    <button class="btn-ghost btn-sm" id="prof-pill" title="Switch role">choose role</button>
     <button class="btn-ghost btn-sm" id="btn-theme" title="Toggle theme">◐</button>
     <button class="btn-ghost btn-sm" id="btn-auth">Sign in</button>
   </div>
@@ -216,7 +216,12 @@ html[data-theme="dark"] #toast{color:#082032}
   <div class="prof-grid">
     <button class="prof-card" data-prof="data-analyst">
       <h3>Data Analyst</h3>
-      <p>SQL, Excel, one BI tool, portfolio talk-track and mock interviews. 4 units, 24 steps.</p>
+      <p>SQL, Excel, one BI tool, portfolio talk-track and mock interviews. 4 units, 25 steps.</p>
+      <span class="tag">READY</span>
+    </button>
+    <button class="prof-card" data-prof="data-quality">
+      <h3>Data Quality / Conversion Analyst</h3>
+      <p>Profile the source, cleanse and map it, then prove the load with row counts and reconciliation. SQL, Power Query, mocks. 4 units, 27 steps.</p>
       <span class="tag">READY</span>
     </button>
     <div class="prof-card locked"><h3>Business Analyst</h3><p>Requirements, stakeholder cases, SQL and dashboard storytelling.</p><span class="tag">COMING SOON</span></div>
@@ -239,7 +244,7 @@ html[data-theme="dark"] #toast{color:#082032}
       <!-- PATH MODE -->
       <div class="panel" id="pane-path">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-          <h2 style="margin-bottom:0">Guided — Data Analyst path, nothing is locked</h2>
+          <h2 style="margin-bottom:0" id="path-heading">Guided — Data Analyst path, nothing is locked</h2>
           <button class="btn-ghost btn-sm" id="btn-reset-path">Reset path</button>
         </div>
         <p class="subtle" style="margin:10px 0">Kit lessons auto-complete when you finish them inside the kit (same browser). Everything else: hit Done when the sitting is over.</p>
@@ -385,7 +390,7 @@ function cleanLine(){return CLEAN_LINES[Math.floor(Date.now()/864e5)%CLEAN_LINES
 
 // ---------- Data Analyst path ----------
 // type: 'lesson' (kit lessons, auto-done from kit progress) | 'app' (manual done)
-const PATH=[
+const PATH_DA=[
  {unit:'Unit 1 · SQL — the most-screened skill', icon:'🗄️', nodes:[
   {id:'sql-first',  type:'lesson', kit:'sql', lessons:[1,2,3],   chip:'c-sql',  min:25, title:'First queries',        concepts:'SELECT & FROM · WHERE · ORDER BY & LIMIT'},
   {id:'g-quest',    type:'app',    url:BASE+'sql-quest/',        chip:'c-game', min:20, title:'SQL Space Quest — one mission', concepts:'Apply SELECT/WHERE under game pressure', cat:'sql'},
@@ -420,7 +425,71 @@ const PATH=[
   {id:'redo-miss',  type:'miss', chip:'c-mock', min:25, title:'Recall sweep #2 — final', concepts:'Highest-payoff final step: relearn only what you got wrong', cat:'mock'},
  ]},
 ];
-const ALL_NODES=PATH.flatMap(u=>u.nodes);
+
+// ---------- Data Quality / Conversion Analyst path ----------
+// Role research (2026 postings): the job is move-and-prove work — profile the source, cleanse and
+// standardize, map old values to new, then validate row counts and reconcile what didn't make it.
+// SQL is the screened skill; Excel/Power Query is the daily driver; ETL + data-profiling vocabulary
+// shows up in every posting. The kits' 5xx/4xx lesson blocks were built for exactly this work.
+const PATH_DQ=[
+ {unit:'Unit 1 · SQL foundations — the screened skill', icon:'🗄️', nodes:[
+  {id:'dq-sql-first', type:'lesson', kit:'sql', lessons:[102,1,2], chip:'c-sql', min:25, title:'Grain & first queries',  concepts:'The grain of a table · SELECT & FROM · WHERE'},
+  {id:'dq-quest',     type:'app',    url:BASE+'sql-quest/',        chip:'c-game', min:20, title:'SQL Space Quest — one mission', concepts:'Apply SELECT/WHERE under game pressure', cat:'sql'},
+  {id:'dq-sql-agg',   type:'lesson', kit:'sql', lessons:[5,7,8],   chip:'c-sql', min:25, title:'Aggregation & shaping',  concepts:'COUNT/SUM/GROUP BY · HAVING & duplicates · CASE & COALESCE'},
+  {id:'dq-sql-joins', type:'lesson', kit:'sql', lessons:[103,4,6], chip:'c-sql', min:25, title:'Joins',                  concepts:'Keys & why tables relate · INNER JOIN · LEFT JOIN & NULLs'},
+  {id:'dq-dryrun1',   type:'app',    url:BASE+'sql-dry-run/',      chip:'c-game', min:18, title:'SQL Dry Run — timed reps', concepts:'Retrieval practice on everything so far', cat:'sql'},
+  {id:'dq-sql-adv',   type:'lesson', kit:'sql', lessons:[9,11,14], chip:'c-sql', min:25, title:'Subqueries, CTEs & dates', concepts:'Subqueries · CTEs · Date functions — the shapes conversion scripts are built from'},
+ ]},
+ {unit:'Unit 2 · Profiling — know the source before you move it', icon:'🔍', nodes:[
+  {id:'dq-prof-1',    type:'lesson', kit:'sql', lessons:[501,502], chip:'c-sql', min:25, title:'Profiling in SQL',       concepts:'Counts & uniqueness · finding duplicates'},
+  {id:'dq-prof-2',    type:'lesson', kit:'sql', lessons:[503],     chip:'c-sql', min:15, title:'Nulls & format chaos',   concepts:'Where a source file quietly lies to you'},
+  {id:'dq-prof-xl',   type:'lesson', kit:'excel', lessons:[521,522], chip:'c-excel', min:22, title:'Profiling a source sheet', concepts:'Profiling a source sheet · finding & removing duplicates'},
+  {id:'dq-ssarch',    type:'app',    url:BASE+'spreadsheet-archaeology/', chip:'c-sim', min:28, title:'Spreadsheet Archaeology — one case', concepts:'A real messy-workbook investigation, start to finish', cat:'excel'},
+  {id:'dq-miss-1',    type:'miss',   chip:'c-mock', min:15, title:'Recall sweep #1', concepts:'Clear the questions the kits flagged as shaky — or celebrate a clean run', cat:'mock'},
+ ]},
+ {unit:'Unit 3 · Cleanse, map, and prove it moved', icon:'🧼', nodes:[
+  {id:'dq-clean-sql', type:'lesson', kit:'sql', lessons:[504,505,506], chip:'c-sql', min:28, title:'Cleansing & mapping in SQL', concepts:'Standardize text · CASE WHEN value mapping · type coercion & defaults'},
+  {id:'dq-clean-xl',  type:'lesson', kit:'excel', lessons:[523,524], chip:'c-excel', min:20, title:'Cleansing in Excel',  concepts:'Standardizing text · type coercion'},
+  {id:'dq-xl-pq',     type:'lesson', kit:'excel', lessons:[21,9],   chip:'c-excel', min:25, title:'Power Query & dirty data', concepts:'Power Query basics — the ETL tool you already have · spot & fix dirty data'},
+  {id:'dq-val-sql',   type:'lesson', kit:'sql', lessons:[507,508],  chip:'c-sql', min:25, title:'Validation & reconciliation', concepts:'Validation: row counts · reconciliation: what didn’t make it'},
+  {id:'dq-recon',     type:'lesson', kit:'sql', lessons:[12,16],    chip:'c-sql', min:25, title:'Reconciliation queries',  concepts:'Reconciliation queries · temp tables vs views for staging'},
+  {id:'dq-xlsprint',  type:'app',    url:BASE+'excel-sales-sprint/', chip:'c-game', min:18, title:'Excel Sales Sprint',   concepts:'Speed reps against the clock', cat:'excel'},
+ ]},
+ {unit:'Unit 4 · Sign-off & interview week', icon:'🎤', nodes:[
+  {id:'dq-xl-map',    type:'lesson', kit:'excel', lessons:[525],   chip:'c-excel', min:15, title:'Mapping & reconciliation in Excel', concepts:'The mapping sheet a conversion actually ships with'},
+  {id:'dq-xl-dv',     type:'lesson', kit:'excel', lessons:[19],    chip:'c-excel', min:15, title:'Data validation',       concepts:'Stop bad data at the door instead of cleaning it later'},
+  {id:'dq-pbi-clean', type:'lesson', kit:'powerbi', lessons:[402,403,404], chip:'c-bi', min:25, title:'Cleansing in Power Query (BI)', concepts:'Removing duplicates · cleansing text · type coercion & nulls'},
+  {id:'dq-pbi-val',   type:'lesson', kit:'powerbi', lessons:[401,405], chip:'c-bi', min:22, title:'Profiling & validation in BI', concepts:'Profiling source data · validation & reconciliation'},
+  {id:'dq-talk-1',    type:'app', url:BASE+'steam-hidden-gems-list/', chip:'c-talk', min:18, title:'Talk-track: data quality story', concepts:'Out loud: what was dirty → how you found it → how you proved the fix', cat:'talk'},
+  {id:'dq-talk-2',    type:'app', url:'https://github.com/michaelnocito/telco-churn-analysis', chip:'c-talk', min:18, title:'Talk-track: Telco Churn', concepts:'Same drill; write a 5-bullet cheat sheet from memory, then correct it', cat:'talk'},
+  {id:'dq-mock-beh',  type:'app', url:null, local:'Run C:\\Users\\Mike\\Projects\\mikes-interview-kit and open http://localhost:4212', chip:'c-mock', min:18, title:'Behavioral mock (local kit)', concepts:'3-4 questions per sitting, out loud', cat:'mock'},
+  {id:'dq-mock-excel',type:'app', url:BASE+'excel-interview/',   chip:'c-mock', min:25, title:'Excel Interview mock',   concepts:'Dress rehearsal for a live Excel screen', cat:'mock'},
+  {id:'dq-dryrun2',   type:'app', url:BASE+'sql-dry-run/',       chip:'c-game', min:18, title:'SQL Dry Run — cold pass', concepts:'No notes; misses go on the miss list', cat:'sql'},
+  {id:'dq-miss-2',    type:'miss', chip:'c-mock', min:25, title:'Recall sweep #2 — final', concepts:'Highest-payoff final step: relearn only what you got wrong', cat:'mock'},
+ ]},
+];
+
+// ---------- professions ----------
+const PROFS={
+ 'data-analyst':{
+   label:'Data Analyst', path:PATH_DA,
+   heading:'Guided — Data Analyst path, nothing is locked',
+   units:[{icon:'🗄️',label:'Query Runner',desc:'Finish every Unit 1 SQL step'},
+          {icon:'📗',label:'Sheet Wrangler',desc:'Finish every Unit 2 Excel step'},
+          {icon:'📊',label:'Dashboard Ready',desc:'Finish every Unit 3 BI step'},
+          {icon:'🎤',label:'Interview Ready',desc:'Finish every Unit 4 step'}],
+ },
+ 'data-quality':{
+   label:'Data Quality / Conversion Analyst', path:PATH_DQ,
+   heading:'Guided — Data Quality / Conversion Analyst path, nothing is locked',
+   units:[{icon:'🗄️',label:'Query Runner',desc:'Finish every Unit 1 SQL step'},
+          {icon:'🔍',label:'Source Profiler',desc:'Finish every Unit 2 profiling step'},
+          {icon:'🧼',label:'Clean Loader',desc:'Finish every Unit 3 cleanse & reconcile step'},
+          {icon:'🎤',label:'Interview Ready',desc:'Finish every Unit 4 step'}],
+ },
+};
+let PATH=PATH_DA;
+let ALL_NODES=PATH.flatMap(u=>u.nodes);
 
 // ---------- free-mode catalog (v1) ----------
 const ITEMS=[
@@ -460,7 +529,30 @@ function load(){
   s.freeDone=s.freeDone||[];
   return s;
 }
-function save(){localStorage.setItem('preploop',JSON.stringify(S));}
+// Per-profession path state. The legacy top-level fields stay as the Data Analyst slice, so
+// existing users keep their progress; other roles get their own slice under S.profState.
+function syncProfState(){
+  if(!S.prof)return;
+  S.profState=S.profState||{};
+  S.profState[S.prof]={pathDone:S.pathDone,pathLog:S.pathLog,kitBaseline:S.kitBaseline||{},badgesEarned:S.badgesEarned,badgeMarks:S.badgeMarks};
+}
+function applyProf(prof){
+  if(S.prof&&S.prof!==prof)syncProfState(); // bank the old role's progress before swapping slices
+  S.prof=prof;
+  const p=(S.profState||{})[prof];
+  if(p){
+    S.pathDone=p.pathDone||[]; S.pathLog=p.pathLog||{}; S.kitBaseline=p.kitBaseline||{};
+    S.badgesEarned=p.badgesEarned||[]; S.badgeMarks=p.badgeMarks||{};
+  }else if(prof!=='data-analyst'){
+    // fresh role: no baseline, so kit lessons already finished count straight away
+    S.pathDone=[]; S.pathLog={}; S.kitBaseline={}; S.badgesEarned=[]; S.badgeMarks={};
+  }
+  PATH=(PROFS[prof]||PROFS['data-analyst']).path;
+  ALL_NODES=PATH.flatMap(u=>u.nodes);
+  BADGES=buildBadges(prof);
+  save();
+}
+function save(){syncProfState();localStorage.setItem('preploop',JSON.stringify(S));}
 function nodeDone(n){
   if(S.pathDone.includes(n.id))return true;
   if(n.type==='lesson'){
@@ -495,13 +587,15 @@ function streak(){
 }
 
 // ---------- badges ----------
-function _unitProg(ix){const u=PATH[ix];return[u.nodes.filter(nodeDone).length,u.nodes.length];}
-const BADGES=[
+function _unitProg(ix){const u=PATH[ix];if(!u)return[0,1];return[u.nodes.filter(nodeDone).length,u.nodes.length];}
+function buildBadges(prof){
+ const units=(PROFS[prof]||PROFS['data-analyst']).units;
+ return [
  {id:'first',  icon:'🔁', label:'First Loop',      desc:'Finish your first sitting',           prog:()=>[Object.keys(S.history).length?1:0,1]},
- {id:'u1',     icon:'🗄️', label:'Query Runner',    desc:'Finish every Unit 1 SQL step',        prog:()=>_unitProg(0)},
- {id:'u2',     icon:'📗', label:'Sheet Wrangler',  desc:'Finish every Unit 2 Excel step',      prog:()=>_unitProg(1)},
- {id:'u3',     icon:'📊', label:'Dashboard Ready', desc:'Finish every Unit 3 BI step',         prog:()=>_unitProg(2)},
- {id:'u4',     icon:'🎤', label:'Interview Ready', desc:'Finish every Unit 4 step',            prog:()=>_unitProg(3)},
+ {id:'u1',     icon:units[0].icon, label:units[0].label, desc:units[0].desc,                   prog:()=>_unitProg(0)},
+ {id:'u2',     icon:units[1].icon, label:units[1].label, desc:units[1].desc,                   prog:()=>_unitProg(1)},
+ {id:'u3',     icon:units[2].icon, label:units[2].label, desc:units[2].desc,                   prog:()=>_unitProg(2)},
+ {id:'u4',     icon:units[3].icon, label:units[3].label, desc:units[3].desc,                   prog:()=>_unitProg(3)},
  {id:'path',   icon:'🏁', label:'Full Loop',       desc:'Complete the whole path',             prog:()=>[ALL_NODES.filter(nodeDone).length,ALL_NODES.length]},
  {id:'streak3',icon:'🔥', label:'Three-Peat',      desc:'3-day sitting streak',                prog:()=>[Math.min(3,streak()),3]},
  {id:'streak7',icon:'🌋', label:'Full Week',       desc:'7-day sitting streak',                prog:()=>[Math.min(7,streak()),7]},
@@ -509,7 +603,9 @@ const BADGES=[
  {id:'early',  icon:'🌅', label:'Early Bird',   secret:true, desc:'A sitting before 8am',      prog:()=>[S.badgeMarks.early?1:0,1]},
  {id:'night',  icon:'🌙', label:'Night Owl',    secret:true, desc:'A sitting after 10pm',      prog:()=>[S.badgeMarks.night?1:0,1]},
  {id:'weekend',icon:'🧺', label:'Weekend Rep',  secret:true, desc:'A weekend sitting',         prog:()=>[S.badgeMarks.weekend?1:0,1]},
-];
+ ];
+}
+let BADGES=buildBadges('data-analyst');
 function checkBadges(){
   BADGES.forEach(b=>{
     const[d,t]=b.prog();
@@ -949,13 +1045,20 @@ $('au-google').onclick=async()=>{
 window.addEventListener('load',()=>{setTimeout(refreshAuthUI,800);});
 
 // ---------- wiring ----------
-document.querySelectorAll('.prof-card[data-prof]').forEach(b=>b.onclick=()=>{S.prof=b.dataset.prof;save();showMain();});
+document.querySelectorAll('.prof-card[data-prof]').forEach(b=>b.onclick=()=>{applyProf(b.dataset.prof);showMain();});
 function showMain(){
   $('screen-prof').classList.add('hidden');
   $('screen-main').classList.remove('hidden');
-  $('prof-pill').textContent='Data Analyst';
+  const p=PROFS[S.prof]||PROFS['data-analyst'];
+  $('prof-pill').textContent=p.label+' ⇄';
+  $('path-heading').textContent=p.heading;
   setMode(S.mode);renderAll();
 }
+$('prof-pill').onclick=()=>{
+  if(!S.prof)return;
+  $('screen-main').classList.add('hidden');
+  $('screen-prof').classList.remove('hidden');
+};
 function setMode(m){
   S.mode=m;save();
   document.querySelectorAll('#mode-tabs button').forEach(b=>b.classList.toggle('on',b.dataset.mode===m));
@@ -964,7 +1067,7 @@ function setMode(m){
 }
 document.querySelectorAll('#mode-tabs button').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
 $('btn-reset-path').onclick=()=>{
-  if(confirm('Start the path over? All 24 steps go back to not-done. Kit lessons you already finished stay finished inside the kits, but the path only counts lessons completed AFTER this reset. Streaks, minutes and time-based badges are kept.'))resetPath();
+  if(confirm('Start the path over? All '+ALL_NODES.length+' steps go back to not-done. Kit lessons you already finished stay finished inside the kits, but the path only counts lessons completed AFTER this reset. Streaks, minutes and time-based badges are kept.'))resetPath();
 };
 $('btn-start-free').onclick=startFree;
 $('btn-done').onclick=()=>finishSitting(true);
@@ -986,7 +1089,7 @@ $('miss-in').addEventListener('keydown',e=>{if(e.key==='Enter')$('miss-add').cli
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S.prof)renderAll();});
 window.addEventListener('storage',()=>{if(S.prof)renderAll();});
 
-if(S.prof)showMain();
+if(S.prof){applyProf(S.prof);showMain();}
 </script>
 </body>
 </html>
