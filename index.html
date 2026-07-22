@@ -173,8 +173,8 @@ html[data-theme="dark"] #toast{color:#082032}
 <header>
   <h1>Prep<span>Loop</span></h1>
   <div class="tabs" id="mode-tabs">
-    <button data-mode="path" class="on">Path</button>
-    <button data-mode="free">Free</button>
+    <button data-mode="path" class="on">Guided</button>
+    <button data-mode="free">Unguided</button>
   </div>
   <div class="hdr-btns">
     <span class="pill" id="prof-pill">choose role</span>
@@ -212,13 +212,16 @@ html[data-theme="dark"] #toast{color:#082032}
     <div>
       <!-- PATH MODE -->
       <div class="panel" id="pane-path">
-        <h2>Data Analyst path — soft guide, nothing is locked</h2>
-        <p class="subtle" style="margin-bottom:10px">Kit lessons auto-complete when you finish them inside the kit (same browser). Everything else: hit Done when the sitting is over.</p>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+          <h2 style="margin-bottom:0">Guided — Data Analyst path, nothing is locked</h2>
+          <button class="btn-ghost btn-sm" id="btn-reset-path">Reset path</button>
+        </div>
+        <p class="subtle" style="margin:10px 0">Kit lessons auto-complete when you finish them inside the kit (same browser). Everything else: hit Done when the sitting is over.</p>
         <div class="pmap" id="pmap"></div>
       </div>
       <!-- FREE MODE -->
       <div class="panel hidden" id="pane-free">
-        <h2>Free mode — pick anything, set your time</h2>
+        <h2>Unguided — pick anything, set your time</h2>
         <div id="queue"></div>
         <button class="btn" id="btn-start-free" style="width:100%;margin-top:8px">Start next sitting</button>
         <h2 style="margin-top:18px">Library</h2>
@@ -378,10 +381,18 @@ function save(){localStorage.setItem('preploop',JSON.stringify(S));}
 function nodeDone(n){
   if(S.pathDone.includes(n.id))return true;
   if(n.type==='lesson'){
-    const d=kitDoneLessons(n.kit);
+    const base=(S.kitBaseline||{})[n.kit]||[];
+    const d=kitDoneLessons(n.kit).filter(l=>!base.includes(l));
     return n.lessons.every(l=>d.includes(l));
   }
   return false;
+}
+function resetPath(){
+  S.pathDone=[];
+  S.kitBaseline={};
+  Object.keys(KIT_META).forEach(k=>{S.kitBaseline[k]=kitDoneLessons(k).slice();});
+  S.badgesEarned=S.badgesEarned.filter(id=>!['u1','u2','u3','u4','path'].includes(id));
+  save();renderAll();toast('Path reset — fresh loop, badges for units cleared');
 }
 function streak(){
   let st=0;const now=new Date();
@@ -677,6 +688,9 @@ function setMode(m){
   $('pane-free').classList.toggle('hidden',m!=='free');
 }
 document.querySelectorAll('#mode-tabs button').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
+$('btn-reset-path').onclick=()=>{
+  if(confirm('Start the path over? All 24 steps go back to not-done. Kit lessons you already finished stay finished inside the kits, but the path only counts lessons completed AFTER this reset. Streaks, minutes and time-based badges are kept.'))resetPath();
+};
 $('btn-start-free').onclick=startFree;
 $('btn-done').onclick=()=>finishSitting(true);
 $('btn-exit').onclick=()=>finishSitting(false);
