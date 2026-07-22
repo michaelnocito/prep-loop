@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>PrepLoop — one app, every rep</title>
-<meta name="description" content="PrepLoop chains your interview-prep apps into one guided workflow: timed sittings, spaced repeats, mark done, next app loads.">
+<meta name="description" content="PrepLoop chains your interview-prep kits, sims and games into one guided path: timed sittings, spaced repeats, badges, mark done and the next step loads.">
 <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-6C09BL3WH1"></script>
 <script>
@@ -13,336 +13,589 @@
   gtag('js', new Date());
   gtag('config', 'G-6C09BL3WH1');
 </script>
+<!-- Shared design system: Grain tokens + Zinc & Sky palette (same files the kits load) -->
+<link rel="stylesheet" href="https://michaelnocito.github.io/analyst-prep-kit/assets/grain/grain.css">
+<link rel="stylesheet" href="https://michaelnocito.github.io/analyst-prep-kit/assets/grain/zinc-sky.css">
+<!-- Unified auth (same Supabase project + session key as the kits) -->
+<script src="https://michaelnocito.github.io/analyst-prep-kit/assets/supabase_auth_sync.js" defer></script>
 <style>
 :root{
-  --bg:#18181b; --panel:#27272a; --panel2:#3f3f46; --line:#52525b;
-  --text:#f4f4f5; --muted:#a1a1aa; --accent:#38bdf8; --accent-deep:#0284c7;
-  --good:#4ade80; --warn:#fbbf24;
+  --bg:var(--color-bg); --panel:var(--color-surface); --line:var(--color-border);
+  --ink:var(--color-text); --dim:var(--color-text-muted);
+  --accent:var(--clay-500); --accent-d:var(--clay-600);
+  --accent-soft:var(--clay-50); --accent-soft-bd:var(--clay-200);
+  --good:var(--leaf-500); --warn:var(--amber-400);
+  --surf:var(--color-surface); --surf2:var(--stone-200);
+  --r2:12px; --shadow:0 2px 10px rgba(9,9,11,.08);
+}
+html[data-theme="dark"]{
+  --bg:var(--stone-900); --panel:var(--stone-800); --line:var(--stone-700);
+  --ink:var(--stone-50); --dim:var(--stone-400);
+  --accent:var(--clay-400); --accent-d:var(--clay-300);
+  --accent-soft:rgba(56,189,248,.12); --accent-soft-bd:rgba(56,189,248,.35);
+  --surf:var(--stone-800); --surf2:var(--stone-700);
+  --shadow:0 2px 12px rgba(0,0,0,.4);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
-button{font-family:inherit;cursor:pointer;border:none;border-radius:8px}
-.btn{background:var(--accent);color:#0c1a24;font-weight:700;padding:10px 18px;font-size:15px}
-.btn:hover{background:#7dd3fc}
-.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--line);padding:9px 16px}
-.btn-ghost:hover{color:var(--text);border-color:var(--muted)}
+body{font-family:var(--font-sans,'IBM Plex Sans',system-ui,sans-serif);background:var(--bg);color:var(--ink);min-height:100vh;font-size:15px;line-height:1.55}
+h1,h2,h3{font-family:var(--font-display,'Space Grotesk',sans-serif)}
+button{font-family:inherit;cursor:pointer;border:none;border-radius:10px;font-size:14px}
+.btn{background:var(--accent);color:#fff;font-weight:700;padding:10px 18px}
+html[data-theme="dark"] .btn{color:#082032}
+.btn:hover{background:var(--accent-d)}
+.btn-ghost{background:transparent;color:var(--dim);border:1px solid var(--line);padding:9px 16px}
+.btn-ghost:hover{color:var(--ink);border-color:var(--accent)}
+.btn-sm{padding:6px 12px;font-size:13px}
 .wrap{max-width:1100px;margin:0 auto;padding:24px 16px}
-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--panel2);background:var(--panel)}
+header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--panel);position:sticky;top:0;z-index:20}
 header h1{font-size:20px;letter-spacing:.5px}
 header h1 span{color:var(--accent)}
-.pill{font-size:12px;color:var(--muted);border:1px solid var(--line);border-radius:99px;padding:3px 10px}
 .hidden{display:none !important}
+.pill{font-size:12px;color:var(--dim);border:1px solid var(--line);border-radius:99px;padding:3px 10px;white-space:nowrap}
+.hdr-btns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+
+/* mode tabs */
+.tabs{display:flex;gap:6px;background:var(--surf2);border-radius:10px;padding:4px}
+.tabs button{background:transparent;color:var(--dim);padding:7px 16px;font-weight:600;border-radius:8px}
+.tabs button.on{background:var(--panel);color:var(--accent);box-shadow:var(--shadow)}
 
 /* profession screen */
-.prof-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:18px}
-.prof-card{background:var(--panel);border:1px solid var(--panel2);border-radius:12px;padding:20px;text-align:left}
+.prof-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:18px}
+.prof-card{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--accent);border-radius:var(--r2);padding:20px;text-align:left;color:var(--ink)}
 .prof-card h3{margin-bottom:6px}
-.prof-card p{color:var(--muted);font-size:14px;line-height:1.4}
-.prof-card.locked{opacity:.55}
+.prof-card p{color:var(--dim);font-size:14px}
+.prof-card.locked{opacity:.55;border-left-color:var(--line)}
+.prof-card .tag{display:inline-block;font-size:11px;margin-top:10px;color:var(--good);letter-spacing:.5px;font-family:var(--font-mono,monospace)}
 .prof-card.locked .tag{color:var(--warn)}
-.prof-card .tag{display:inline-block;font-size:11px;margin-top:10px;color:var(--good);letter-spacing:.5px}
-.prof-card:not(.locked):hover{border-color:var(--accent)}
+.prof-card:not(.locked):hover{border-color:var(--accent);box-shadow:var(--shadow)}
 
-/* dashboard */
-.cols{display:grid;grid-template-columns:340px 1fr;gap:18px;margin-top:18px}
-@media(max-width:860px){.cols{grid-template-columns:1fr}}
-.panel{background:var(--panel);border:1px solid var(--panel2);border-radius:12px;padding:16px}
-.panel h2{font-size:15px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
-.queue-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:8px;border:1px solid var(--panel2);margin-bottom:8px;background:var(--bg)}
+/* layout */
+.cols{display:grid;grid-template-columns:1fr 340px;gap:18px;margin-top:18px}
+@media(max-width:900px){.cols{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--r2);padding:16px}
+.panel h2{font-size:14px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+.stats{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 16px;text-align:center;flex:1;min-width:88px}
+.stat .n{font-size:22px;font-weight:800;color:var(--accent);font-family:var(--font-mono,monospace)}
+.stat .l{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.5px}
+.subtle{color:var(--dim);font-size:13px}
+
+/* path map (Duolingo-style, soft-guide: upcoming dimmed, never locked) */
+.pmap{position:relative;padding-left:4px}
+.pmap:before{content:'';position:absolute;left:24px;top:8px;bottom:8px;width:3px;background:var(--surf2);border-radius:2px}
+.pmap-unit{display:flex;align-items:center;gap:12px;position:relative;padding:18px 0 8px;margin-top:4px}
+.pmap-unit .u-name{font-family:var(--font-display);font-weight:700;font-size:15px}
+.pmap-unit .u-prog{font-size:12px;color:var(--dim);font-family:var(--font-mono,monospace)}
+.pmap-unit .u-dot{width:44px;height:24px;display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:1;font-size:18px}
+.pmap-node{display:flex;gap:14px;align-items:flex-start;position:relative;padding:10px 12px 10px 0;margin:4px 0;cursor:pointer;border-radius:var(--r2);transition:.15s}
+.pmap-node:hover .pmap-title{color:var(--accent)}
+.pmap-dot{flex:none;width:34px;height:34px;border-radius:50%;background:var(--surf2);color:var(--dim);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;border:2px solid var(--line);position:relative;z-index:1;margin-left:8px}
+.pmap-node.done .pmap-dot{background:var(--accent);border-color:var(--accent);color:#fff}
+html[data-theme="dark"] .pmap-node.done .pmap-dot{color:#082032}
+.pmap-node.current{background:var(--surf);border:1px solid var(--accent);padding:12px;margin-left:-4px;box-shadow:var(--shadow)}
+.pmap-node.current .pmap-dot{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 22%, transparent)}
+html[data-theme="dark"] .pmap-node.current .pmap-dot{color:#082032}
+.pmap-node.up{opacity:.55}
+.pmap-node.up:hover{opacity:.9}
+.pmap-title{font-weight:600;font-size:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pmap-sub{font-size:13px;color:var(--dim);margin-top:2px}
+.pmap-meta{font-size:11px;color:var(--dim);font-family:var(--font-mono,monospace);margin-top:4px}
+.pmap-node .btn-sm{margin-top:8px}
+.chip{font-size:10px;border-radius:4px;padding:2px 7px;font-weight:700;letter-spacing:.5px;font-family:var(--font-mono,monospace)}
+.c-sql{background:var(--clay-50);color:var(--clay-700)}
+.c-excel{background:var(--leaf-50);color:var(--leaf-700)}
+.c-bi{background:var(--teal-50);color:var(--teal-700)}
+.c-game{background:var(--amber-50);color:var(--amber-700)}
+.c-sim{background:var(--stone-200);color:var(--stone-700)}
+.c-talk{background:var(--amber-50);color:var(--amber-700)}
+.c-mock{background:var(--rust-50);color:var(--rust-700)}
+.auto-note{font-size:11px;color:var(--good)}
+
+/* badges */
+.badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px}
+.badge-tile{border:1px solid var(--line);border-radius:10px;padding:10px 6px;text-align:center;opacity:.55}
+.badge-tile.got{opacity:1;border-color:var(--accent);background:var(--accent-soft)}
+.badge-tile.secret{border-style:dashed}
+.badge-ico{font-size:22px}
+.badge-name{font-size:11px;font-weight:700;margin-top:4px}
+.badge-prog{font-size:10px;color:var(--dim);font-family:var(--font-mono,monospace)}
+
+/* free mode */
+.queue-item{display:flex;align-items:center;gap:10px;padding:10px;border-radius:10px;border:1px solid var(--line);margin-bottom:8px;background:var(--bg)}
 .queue-item.done{opacity:.45;text-decoration:line-through}
 .queue-item.current{border-color:var(--accent)}
 .queue-item .qi-name{flex:1;font-size:14px}
-.queue-item .qi-min{font-size:12px;color:var(--muted);white-space:nowrap}
-.queue-item .qi-x{background:none;color:var(--muted);font-size:16px;padding:2px 6px}
-.queue-item .qi-x:hover{color:var(--text)}
-.badge{font-size:10px;border-radius:4px;padding:2px 6px;font-weight:700;letter-spacing:.5px}
-.b-sql{background:#0c4a6e;color:#bae6fd}.b-excel{background:#14532d;color:#bbf7d0}
-.b-bi{background:#581c87;color:#e9d5ff}.b-talk{background:#78350f;color:#fde68a}
-.b-mock{background:#7f1d1d;color:#fecaca}.b-py{background:#1e3a8a;color:#bfdbfe}
-.stats{display:flex;gap:14px;margin-bottom:14px;flex-wrap:wrap}
-.stat{background:var(--bg);border:1px solid var(--panel2);border-radius:10px;padding:10px 16px;text-align:center;flex:1;min-width:90px}
-.stat .n{font-size:22px;font-weight:800;color:var(--accent)}
-.stat .l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
-.lib-item{display:flex;align-items:center;gap:8px;padding:8px;border-bottom:1px solid var(--panel2);font-size:13px}
+.queue-item .qi-min{font-size:12px;color:var(--dim);white-space:nowrap;font-family:var(--font-mono,monospace)}
+.queue-item .qi-x{background:none;color:var(--dim);font-size:16px;padding:2px 6px}
+.queue-item .qi-x:hover{color:var(--ink)}
+.lib-item{display:flex;align-items:center;gap:8px;padding:8px 2px;border-bottom:1px solid var(--line);font-size:13px}
 .lib-item:last-child{border-bottom:none}
 .lib-item .li-name{flex:1}
-.lib-item .li-add{background:var(--panel2);color:var(--text);padding:4px 10px;font-size:12px}
-.lib-item .li-add:hover{background:var(--accent);color:#0c1a24}
-.lib-item .li-week{font-size:11px;color:var(--muted);white-space:nowrap}
+.lib-item select{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:3px 4px;font-size:12px}
+.lib-item .li-add{background:var(--surf2);color:var(--ink);padding:4px 10px;font-size:12px}
+.lib-item .li-add:hover{background:var(--accent);color:#fff}
+.lib-item .li-week{font-size:11px;color:var(--dim);white-space:nowrap;font-family:var(--font-mono,monospace)}
 
-/* session screen */
+/* session */
 #session{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;z-index:50}
-.sess-bar{display:flex;align-items:center;gap:14px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--panel2)}
-.sess-bar .s-name{font-weight:700;flex:1;font-size:15px}
-#timer{font-variant-numeric:tabular-nums;font-size:26px;font-weight:800;color:var(--accent);min-width:96px;text-align:center}
+.sess-bar{display:flex;align-items:center;gap:12px;padding:10px 16px;background:var(--panel);border-bottom:1px solid var(--line);flex-wrap:wrap}
+.sess-bar .s-name{font-weight:700;flex:1;font-size:15px;min-width:160px}
+.sess-bar .s-concepts{width:100%;font-size:12px;color:var(--dim)}
+#timer{font-variant-numeric:tabular-nums;font-family:var(--font-mono,monospace);font-size:24px;font-weight:800;color:var(--accent);min-width:92px;text-align:center}
 #timer.over{color:var(--warn)}
 #frame-wrap{flex:1;position:relative}
 #frame-wrap iframe{width:100%;height:100%;border:none;background:#fff}
-.no-embed{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;color:var(--muted);text-align:center;padding:20px}
-.recall-overlay{position:absolute;inset:0;background:rgba(24,24,27,.96);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center;z-index:5}
+.no-embed{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;color:var(--dim);text-align:center;padding:20px}
+.recall-overlay{position:absolute;inset:0;background:color-mix(in srgb,var(--bg) 96%, transparent);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;padding:24px;text-align:center;z-index:5}
 .recall-overlay h3{font-size:22px}
-.recall-overlay p{color:var(--muted);max-width:480px;line-height:1.5}
-.subtle{color:var(--muted);font-size:13px;line-height:1.5}
+.recall-overlay p{color:var(--dim);max-width:480px}
+
+/* misc */
 .miss-row{display:flex;gap:8px;margin-top:10px}
-.miss-row input{flex:1;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);padding:8px 10px;font-size:14px}
-.miss-list{margin-top:10px;font-size:13px;color:var(--muted);max-height:140px;overflow:auto}
-.miss-list li{margin:4px 0 4px 16px}
-.premium{border:1px dashed var(--accent-deep);border-radius:12px;padding:14px;margin-top:16px;font-size:13px;color:var(--muted);line-height:1.5}
+.miss-row input{flex:1;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:8px 10px;font-size:14px}
+.miss-list{margin-top:10px;font-size:13px;color:var(--dim);max-height:140px;overflow:auto;list-style-position:inside}
+.premium{border:1px dashed var(--accent);border-radius:var(--r2);padding:14px;margin-top:16px;font-size:13px;color:var(--dim)}
 .premium b{color:var(--accent)}
-footer{text-align:center;color:var(--muted);font-size:12px;padding:24px}
+footer{text-align:center;color:var(--dim);font-size:12px;padding:24px}
+/* auth modal */
+.modal-bg{position:fixed;inset:0;background:var(--color-overlay,rgba(9,9,11,.5));display:flex;align-items:center;justify-content:center;z-index:100}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:var(--r2);padding:24px;width:min(380px,92vw)}
+.modal h3{margin-bottom:6px}
+.modal input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:10px;margin-top:10px;font-size:14px}
+.modal .m-btns{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.modal .m-msg{font-size:12px;color:var(--warn);margin-top:8px;min-height:16px}
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;padding:10px 20px;border-radius:99px;font-weight:700;box-shadow:var(--shadow);z-index:200;transition:opacity .3s}
+html[data-theme="dark"] #toast{color:#082032}
 </style>
 </head>
 <body>
 
 <header>
   <h1>Prep<span>Loop</span></h1>
-  <div style="display:flex;gap:10px;align-items:center">
-    <span class="pill" id="prof-pill">choose profession</span>
-    <button class="btn-ghost" id="btn-reset" title="Clear today's queue and rebuild">Rebuild today</button>
+  <div class="tabs" id="mode-tabs">
+    <button data-mode="path" class="on">Path</button>
+    <button data-mode="free">Free</button>
+  </div>
+  <div class="hdr-btns">
+    <span class="pill" id="prof-pill">choose role</span>
+    <button class="btn-ghost btn-sm" id="btn-theme" title="Toggle theme">◐</button>
+    <button class="btn-ghost btn-sm" id="btn-auth">Sign in</button>
   </div>
 </header>
 
 <!-- SCREEN 1: profession -->
 <div class="wrap" id="screen-prof">
-  <h2 style="margin-top:22px">What are you interviewing for?</h2>
-  <p class="subtle" style="margin-top:6px">PrepLoop chains your practice apps into one guided workflow: short timed sittings, spaced repeats, varied angles so you and the material stay fresh.</p>
+  <h2 style="margin-top:22px">What role are you interviewing for?</h2>
+  <p class="subtle" style="margin-top:6px">PrepLoop guides you through only the content that role needs: kit lessons with clear start and stop points, sims, games and mocks, in short timed sittings with spaced repeats.</p>
   <div class="prof-grid">
     <button class="prof-card" data-prof="data-analyst">
       <h3>Data Analyst</h3>
-      <p>SQL, Excel, BI tools, portfolio talk-track and mock interviews across 15 practice apps and games.</p>
+      <p>SQL, Excel, one BI tool, portfolio talk-track and mock interviews. 4 units, 24 steps.</p>
       <span class="tag">READY</span>
     </button>
-    <div class="prof-card locked">
-      <h3>Business Analyst</h3>
-      <p>Requirements, stakeholder cases, SQL and dashboard storytelling.</p>
-      <span class="tag">COMING SOON</span>
-    </div>
-    <div class="prof-card locked">
-      <h3>Financial Analyst</h3>
-      <p>Excel modeling, ratios, scenario cases and presentation reps.</p>
-      <span class="tag">COMING SOON</span>
-    </div>
+    <div class="prof-card locked"><h3>Business Analyst</h3><p>Requirements, stakeholder cases, SQL and dashboard storytelling.</p><span class="tag">COMING SOON</span></div>
+    <div class="prof-card locked"><h3>Financial Analyst</h3><p>Excel modeling, ratios, scenario cases and presentation reps.</p><span class="tag">COMING SOON</span></div>
   </div>
 </div>
 
-<!-- SCREEN 2: dashboard -->
-<div class="wrap hidden" id="screen-dash">
+<!-- SCREEN 2: main -->
+<div class="wrap hidden" id="screen-main">
   <div class="stats">
+    <div class="stat"><div class="n" id="st-path">0%</div><div class="l">Path</div></div>
     <div class="stat"><div class="n" id="st-today">0</div><div class="l">Done today</div></div>
-    <div class="stat"><div class="n" id="st-week">0</div><div class="l">This week</div></div>
     <div class="stat"><div class="n" id="st-streak">0</div><div class="l">Day streak</div></div>
     <div class="stat"><div class="n" id="st-mins">0</div><div class="l">Min today</div></div>
+    <div class="stat"><div class="n" id="st-badges">0</div><div class="l">Badges</div></div>
   </div>
+
   <div class="cols">
     <div>
-      <div class="panel">
-        <h2>Today's loop</h2>
+      <!-- PATH MODE -->
+      <div class="panel" id="pane-path">
+        <h2>Data Analyst path — soft guide, nothing is locked</h2>
+        <p class="subtle" style="margin-bottom:10px">Kit lessons auto-complete when you finish them inside the kit (same browser). Everything else: hit Done when the sitting is over.</p>
+        <div class="pmap" id="pmap"></div>
+      </div>
+      <!-- FREE MODE -->
+      <div class="panel hidden" id="pane-free">
+        <h2>Free mode — pick anything, set your time</h2>
         <div id="queue"></div>
-        <button class="btn" id="btn-start" style="width:100%;margin-top:8px">Start next sitting</button>
+        <button class="btn" id="btn-start-free" style="width:100%;margin-top:8px">Start next sitting</button>
+        <h2 style="margin-top:18px">Library</h2>
+        <div id="library"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h2>Badges</h2>
+        <div class="badge-grid" id="badges"></div>
       </div>
       <div class="panel" style="margin-top:14px">
         <h2>Miss list</h2>
-        <p class="subtle">Anything you got wrong today. Redo only these at week's end.</p>
-        <div class="miss-row"><input id="miss-in" placeholder="e.g. LEFT JOIN null trap"><button class="btn-ghost" id="miss-add">Add</button></div>
+        <p class="subtle">Anything you got wrong today. The path ends with a redo-your-misses step.</p>
+        <div class="miss-row"><input id="miss-in" placeholder="e.g. LEFT JOIN null trap"><button class="btn-ghost btn-sm" id="miss-add">Add</button></div>
         <ul class="miss-list" id="miss-list"></ul>
       </div>
-      <div class="premium"><b>Premium (coming):</b> more professions, adaptive scheduling that watches your miss list, and cross-app score tracking. Today's loop is free forever.</div>
-    </div>
-    <div class="panel">
-      <h2>Library — add any sitting to today</h2>
-      <div id="library"></div>
+      <div class="premium"><b>Premium (coming):</b> more roles, adaptive path that reshuffles from your miss list, cross-device sync of PrepLoop progress with your Analyst Prep Kit account.</div>
     </div>
   </div>
 </div>
 
-<!-- SCREEN 3: session -->
+<!-- SESSION -->
 <div id="session" class="hidden">
   <div class="sess-bar">
-    <span class="badge" id="s-badge"></span>
+    <span class="chip" id="s-chip"></span>
     <span class="s-name" id="s-name"></span>
     <div id="timer">00:00</div>
-    <button class="btn-ghost" id="btn-pause">Pause</button>
-    <button class="btn" id="btn-done">Done — next</button>
-    <button class="btn-ghost" id="btn-exit">Exit</button>
+    <button class="btn-ghost btn-sm" id="btn-pause">Pause</button>
+    <button class="btn btn-sm" id="btn-done">Done — next</button>
+    <button class="btn-ghost btn-sm" id="btn-exit">Exit</button>
+    <span class="s-concepts" id="s-concepts"></span>
   </div>
   <div id="frame-wrap"></div>
 </div>
 
-<footer>PrepLoop · part of the Analyst Prep ecosystem · michaelnocito.github.io</footer>
+<!-- AUTH MODAL -->
+<div class="modal-bg hidden" id="auth-modal">
+  <div class="modal">
+    <h3>Sign in</h3>
+    <p class="subtle">Same account as the Analyst Prep Kit. No account needed: everything works as a guest, an account just syncs across devices.</p>
+    <input id="au-email" type="email" placeholder="email" autocomplete="email">
+    <input id="au-pw" type="password" placeholder="password" autocomplete="current-password">
+    <div class="m-msg" id="au-msg"></div>
+    <div class="m-btns">
+      <button class="btn btn-sm" id="au-in">Sign in</button>
+      <button class="btn-ghost btn-sm" id="au-up">Create account</button>
+      <button class="btn-ghost btn-sm" id="au-google">Google</button>
+      <button class="btn-ghost btn-sm" id="au-close">Stay guest</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="hidden"></div>
+<footer>PrepLoop · part of the Analyst Prep ecosystem · <a href="https://michaelnocito.github.io/analyst-prep-kit/" style="color:var(--accent)">Analyst Prep Kit</a></footer>
 
 <script>
 'use strict';
-// ---------- catalog ----------
 const BASE='https://michaelnocito.github.io/';
-const ITEMS=[
- {id:'sql-dry-run',   name:'SQL Dry Run',            cat:'sql',  url:BASE+'sql-dry-run/',            min:18, perDay:2, perWeek:5, test:true},
- {id:'kit-sql',       name:'Prep Kit — SQL lesson',  cat:'sql',  url:BASE+'analyst-prep-kit/',       min:25, perDay:1, perWeek:4, test:false},
- {id:'kit-excel',     name:'Prep Kit — Excel lesson',cat:'excel',url:BASE+'analyst-prep-kit/',       min:25, perDay:1, perWeek:3, test:false},
- {id:'ss-arch',       name:'Spreadsheet Archaeology',cat:'excel',url:BASE+'spreadsheet-archaeology/',min:28, perDay:1, perWeek:3, test:true},
- {id:'talk-track',    name:'Portfolio talk-track (out loud)',cat:'talk',url:BASE+'steam-hidden-gems-list/',min:18, perDay:1, perWeek:3, test:true},
- {id:'interview-kit', name:'Behavioral mock (local kit)',cat:'mock',url:null,local:'C:\\Users\\Mike\\Projects\\mikes-interview-kit — run it, then open http://localhost:4212',min:18, perDay:1, perWeek:3, test:true},
- {id:'sql-trail',     name:'SQL Trail (one run)',    cat:'sql',  url:BASE+'sql-trail/',              min:25, perDay:2, perWeek:3, test:true},
- {id:'sql-quest',     name:'SQL Space Quest',        cat:'sql',  url:BASE+'sql-quest/',              min:20, perDay:1, perWeek:2, test:true},
- {id:'tab-arch',      name:'Tableau Archaeology',    cat:'bi',   url:BASE+'tableau-archaeology/',    min:28, perDay:1, perWeek:2, test:true},
- {id:'kit-bi',        name:'Prep Kit — BI lesson',   cat:'bi',   url:BASE+'analyst-prep-kit/',       min:25, perDay:1, perWeek:3, test:false},
- {id:'excel-sprint',  name:'Excel Sales Sprint',     cat:'excel',url:BASE+'excel-sales-sprint/',     min:18, perDay:2, perWeek:3, test:true},
- {id:'sql-sprint',    name:'SQL Sales Sprint',       cat:'sql',  url:BASE+'sql-sales-sprint/',       min:18, perDay:2, perWeek:3, test:true},
- {id:'excel-int',     name:'Excel Interview mock',   cat:'mock', url:BASE+'excel-interview/',        min:25, perDay:1, perWeek:2, test:true},
- {id:'nexus',         name:'NEXUS SQL Mystery',      cat:'sql',  url:BASE+'nexus-sql-mystery/',      min:20, perDay:1, perWeek:2, test:true},
- {id:'kit-py',        name:'Prep Kit — Python/Stats',cat:'py',   url:BASE+'analyst-prep-kit/',       min:25, perDay:1, perWeek:2, test:false},
+const KIT=BASE+'analyst-prep-kit/';
+
+// ---------- kit progress bridges (same-origin localStorage) ----------
+const KIT_META={
+  sql:    {key:'sqlkit-v1', path:'sql',     deep:true},
+  excel:  {key:'epk',       path:'excel',   deep:true},
+  powerbi:{key:'pbikt-v1',  path:'powerbi', deep:true},
+  tableau:{key:'tpk',       path:'tableau', deep:true},
+  python: {key:'ppk',       path:'python',  deep:false},
+  stats:  {key:'spk',       path:'stats',   deep:false},
+};
+function kitDoneLessons(kit){
+  try{
+    const s=JSON.parse(localStorage.getItem(KIT_META[kit].key)||'{}');
+    return s.doneLessons||s.lessonsDone||[];
+  }catch(e){return [];}
+}
+function lessonURL(kit,firstId){
+  const m=KIT_META[kit];
+  return KIT+m.path+'/'+(m.deep&&firstId!=null?('#lesson-'+firstId):'');
+}
+
+// ---------- Data Analyst path ----------
+// type: 'lesson' (kit lessons, auto-done from kit progress) | 'app' (manual done)
+const PATH=[
+ {unit:'Unit 1 · SQL — the most-screened skill', icon:'🗄️', nodes:[
+  {id:'sql-first',  type:'lesson', kit:'sql', lessons:[1,2,3],   chip:'c-sql',  min:25, title:'First queries',        concepts:'SELECT & FROM · WHERE · ORDER BY & LIMIT'},
+  {id:'g-quest',    type:'app',    url:BASE+'sql-quest/',        chip:'c-game', min:20, title:'SQL Space Quest — one mission', concepts:'Apply SELECT/WHERE under game pressure', cat:'sql'},
+  {id:'sql-agg',    type:'lesson', kit:'sql', lessons:[5,7,8],   chip:'c-sql',  min:25, title:'Aggregation & shaping', concepts:'COUNT/SUM/GROUP BY · HAVING & duplicates · CASE & COALESCE'},
+  {id:'g-dryrun1',  type:'app',    url:BASE+'sql-dry-run/',      chip:'c-game', min:18, title:'SQL Dry Run — timed reps', concepts:'Retrieval practice on everything so far', cat:'sql'},
+  {id:'sql-joins',  type:'lesson', kit:'sql', lessons:[103,4,6], chip:'c-sql',  min:25, title:'Joins',                 concepts:'Keys & why tables relate · INNER JOIN · LEFT JOIN & NULLs'},
+  {id:'g-trail',    type:'app',    url:BASE+'sql-trail/',        chip:'c-game', min:25, title:'SQL Trail — one run',   concepts:'Joins + aggregates, roguelite pressure', cat:'sql'},
+  {id:'sql-adv',    type:'lesson', kit:'sql', lessons:[14,9,11], chip:'c-sql',  min:25, title:'Interview favorites',   concepts:'Date functions · Subqueries · CTEs'},
+  {id:'g-sqlsprint',type:'app',    url:BASE+'sql-sales-sprint/', chip:'c-game', min:18, title:'SQL Sales Sprint',      concepts:'Speed reps against the clock', cat:'sql'},
+ ]},
+ {unit:'Unit 2 · Excel — the daily driver', icon:'📗', nodes:[
+  {id:'xl-form',    type:'lesson', kit:'excel', lessons:[1,2,5], chip:'c-excel', min:25, title:'Core formulas',        concepts:'First formula · IF · COUNTIF/SUMIF'},
+  {id:'xl-lookup',  type:'lesson', kit:'excel', lessons:[3,4],   chip:'c-excel', min:20, title:'Lookups',              concepts:'VLOOKUP · XLOOKUP'},
+  {id:'xl-pivot',   type:'lesson', kit:'excel', lessons:[6,7],   chip:'c-excel', min:20, title:'PivotTables',          concepts:'What a pivot is · build your first pivot'},
+  {id:'g-ssarch',   type:'app',    url:BASE+'spreadsheet-archaeology/', chip:'c-sim', min:28, title:'Spreadsheet Archaeology — one case', concepts:'Messy-workbook detective work, start to finish', cat:'excel'},
+  {id:'xl-clean',   type:'lesson', kit:'excel', lessons:[9,12],  chip:'c-excel', min:20, title:'Dirty data',           concepts:'Spot & fix dirty data · IFERROR defensive formulas'},
+  {id:'g-xlsprint', type:'app',    url:BASE+'excel-sales-sprint/', chip:'c-game', min:18, title:'Excel Sales Sprint',  concepts:'Speed reps against the clock', cat:'excel'},
+ ]},
+ {unit:'Unit 3 · One BI tool — pick your posting’s tool', icon:'📊', nodes:[
+  {id:'pbi-core',   type:'lesson', kit:'powerbi', lessons:[2,4], chip:'c-bi', min:25, title:'Power BI core',          concepts:'Connecting to data · Relationships & the data model'},
+  {id:'pbi-dax',    type:'lesson', kit:'powerbi', lessons:[5,6,7], chip:'c-bi', min:25, title:'DAX essentials',       concepts:'Columns vs measures · Aggregations · CALCULATE & filter context'},
+  {id:'g-tabarch',  type:'app',    url:BASE+'tableau-archaeology/', chip:'c-sim', min:28, title:'Tableau Archaeology — one case', concepts:'Exploratory analysis, the "walk me through this data" answer', cat:'bi'},
+ ]},
+ {unit:'Unit 4 · Interview week', icon:'🎤', nodes:[
+  {id:'talk-1',     type:'app', url:BASE+'steam-hidden-gems-list/', chip:'c-talk', min:18, title:'Talk-track: Steam Hidden Gems', concepts:'Out loud: question → method → a query you’re proud of → finding → next step', cat:'talk'},
+  {id:'talk-2',     type:'app', url:'https://github.com/michaelnocito/telco-churn-analysis', chip:'c-talk', min:18, title:'Talk-track: Telco Churn', concepts:'Same drill; write a 5-bullet cheat sheet from memory, then correct it', cat:'talk'},
+  {id:'mock-beh',   type:'app', url:null, local:'Run C:\\Users\\Mike\\Projects\\mikes-interview-kit and open http://localhost:4212', chip:'c-mock', min:18, title:'Behavioral mock (local kit)', concepts:'3-4 questions per sitting, out loud', cat:'mock'},
+  {id:'g-dryrun2',  type:'app', url:BASE+'sql-dry-run/',       chip:'c-game', min:18, title:'SQL Dry Run — cold pass', concepts:'No notes; misses go on the miss list', cat:'sql'},
+  {id:'mock-excel', type:'app', url:BASE+'excel-interview/',   chip:'c-mock', min:25, title:'Excel Interview mock',   concepts:'Dress rehearsal for a live Excel screen', cat:'mock'},
+  {id:'g-nexus',    type:'app', url:BASE+'nexus-sql-mystery/', chip:'c-game', min:20, title:'NEXUS SQL Mystery',      concepts:'Fresh-context SQL test, one chapter', cat:'sql'},
+  {id:'redo-miss',  type:'app', url:null, local:'Open your miss list (right panel) and redo every item until each one is right twice in a row.', chip:'c-mock', min:25, title:'Redo your misses', concepts:'Highest-payoff final step: relearn only what you got wrong', cat:'mock'},
+ ]},
 ];
+const ALL_NODES=PATH.flatMap(u=>u.nodes);
+
+// ---------- free-mode catalog (v1) ----------
+const ITEMS=[
+ {id:'sql-dry-run',  name:'SQL Dry Run',             cat:'sql',  url:BASE+'sql-dry-run/',            min:18, perDay:2, perWeek:5},
+ {id:'kit-sql',      name:'Prep Kit — SQL lesson',   cat:'sql',  url:KIT+'sql/',                     min:25, perDay:1, perWeek:4},
+ {id:'kit-excel',    name:'Prep Kit — Excel lesson', cat:'excel',url:KIT+'excel/',                   min:25, perDay:1, perWeek:3},
+ {id:'ss-arch',      name:'Spreadsheet Archaeology', cat:'excel',url:BASE+'spreadsheet-archaeology/',min:28, perDay:1, perWeek:3},
+ {id:'talk-track',   name:'Portfolio talk-track',    cat:'talk', url:BASE+'steam-hidden-gems-list/', min:18, perDay:1, perWeek:3},
+ {id:'interview-kit',name:'Behavioral mock (local)', cat:'mock', url:null, local:'Run mikes-interview-kit, open http://localhost:4212', min:18, perDay:1, perWeek:3},
+ {id:'sql-trail',    name:'SQL Trail (one run)',     cat:'sql',  url:BASE+'sql-trail/',              min:25, perDay:2, perWeek:3},
+ {id:'sql-quest',    name:'SQL Space Quest',         cat:'sql',  url:BASE+'sql-quest/',              min:20, perDay:1, perWeek:2},
+ {id:'tab-arch',     name:'Tableau Archaeology',     cat:'bi',   url:BASE+'tableau-archaeology/',    min:28, perDay:1, perWeek:2},
+ {id:'kit-pbi',      name:'Prep Kit — Power BI lesson',cat:'bi', url:KIT+'powerbi/',                 min:25, perDay:1, perWeek:3},
+ {id:'kit-tab',      name:'Prep Kit — Tableau lesson',cat:'bi',  url:KIT+'tableau/',                 min:25, perDay:1, perWeek:3},
+ {id:'excel-sprint', name:'Excel Sales Sprint',      cat:'excel',url:BASE+'excel-sales-sprint/',     min:18, perDay:2, perWeek:3},
+ {id:'sql-sprint',   name:'SQL Sales Sprint',        cat:'sql',  url:BASE+'sql-sales-sprint/',       min:18, perDay:2, perWeek:3},
+ {id:'excel-int',    name:'Excel Interview mock',    cat:'mock', url:BASE+'excel-interview/',        min:25, perDay:1, perWeek:2},
+ {id:'nexus',        name:'NEXUS SQL Mystery',       cat:'sql',  url:BASE+'nexus-sql-mystery/',      min:20, perDay:1, perWeek:2},
+ {id:'kit-py',       name:'Prep Kit — Python/Stats', cat:'py',   url:KIT+'python/',                  min:25, perDay:1, perWeek:2},
+];
+const CAT_CHIP={sql:'c-sql',excel:'c-excel',bi:'c-bi',talk:'c-talk',mock:'c-mock',py:'c-bi',game:'c-game'};
 const CAT_LABEL={sql:'SQL',excel:'EXCEL',bi:'BI',talk:'TALK',mock:'MOCK',py:'PY'};
 
 // ---------- state ----------
 const todayKey=()=>new Date().toISOString().slice(0,10);
 let S=load();
 function load(){
-  let s={};
-  try{s=JSON.parse(localStorage.getItem('preploop')||'{}');}catch(e){}
-  s.prof=s.prof||null;
-  s.history=s.history||{};          // date -> {itemId:count}
-  s.minutes=s.minutes||{};          // date -> total minutes
-  s.misses=s.misses||{};            // date -> [text]
-  if(s.queueDate!==todayKey()){ s.queueDate=todayKey(); s.queue=null; }
+  let s={};try{s=JSON.parse(localStorage.getItem('preploop')||'{}');}catch(e){}
+  s.prof=s.prof||null; s.mode=s.mode||'path';
+  s.pathDone=s.pathDone||[];
+  s.history=s.history||{}; s.minutes=s.minutes||{}; s.misses=s.misses||{};
+  s.badgesEarned=s.badgesEarned||[]; s.badgeMarks=s.badgeMarks||{};
+  if(s.queueDate!==todayKey()){s.queueDate=todayKey();s.queue=null;s.freeDone=[];}
+  s.freeDone=s.freeDone||[];
   return s;
 }
 function save(){localStorage.setItem('preploop',JSON.stringify(S));}
-const doneToday=id=>(S.history[todayKey()]||{})[id]||0;
-function weekDaysUsed(id){
-  let n=0;const now=new Date();
-  for(let d=0;d<7;d++){
-    const k=new Date(now-d*864e5).toISOString().slice(0,10);
-    if((S.history[k]||{})[id]) n++;
+function nodeDone(n){
+  if(S.pathDone.includes(n.id))return true;
+  if(n.type==='lesson'){
+    const d=kitDoneLessons(n.kit);
+    return n.lessons.every(l=>d.includes(l));
   }
-  return n;
+  return false;
+}
+function streak(){
+  let st=0;const now=new Date();
+  for(let d=0;;d++){
+    const k=new Date(now-d*864e5).toISOString().slice(0,10);
+    const c=Object.values(S.history[k]||{}).reduce((a,b)=>a+b,0);
+    if(c>0)st++;else if(d===0)continue;else break;
+    if(d>400)break;
+  }
+  return st;
 }
 
-// ---------- queue building ----------
-// Rotate which double-eligible item gets the 2x slot, day by day.
+// ---------- badges ----------
+function _unitProg(ix){const u=PATH[ix];return[u.nodes.filter(nodeDone).length,u.nodes.length];}
+const BADGES=[
+ {id:'first',  icon:'🔁', label:'First Loop',      desc:'Finish your first sitting',           prog:()=>[Object.keys(S.history).length?1:0,1]},
+ {id:'u1',     icon:'🗄️', label:'Query Runner',    desc:'Finish every Unit 1 SQL step',        prog:()=>_unitProg(0)},
+ {id:'u2',     icon:'📗', label:'Sheet Wrangler',  desc:'Finish every Unit 2 Excel step',      prog:()=>_unitProg(1)},
+ {id:'u3',     icon:'📊', label:'Dashboard Ready', desc:'Finish every Unit 3 BI step',         prog:()=>_unitProg(2)},
+ {id:'u4',     icon:'🎤', label:'Interview Ready', desc:'Finish every Unit 4 step',            prog:()=>_unitProg(3)},
+ {id:'path',   icon:'🏁', label:'Full Loop',       desc:'Complete the whole path',             prog:()=>[ALL_NODES.filter(nodeDone).length,ALL_NODES.length]},
+ {id:'streak3',icon:'🔥', label:'Three-Peat',      desc:'3-day sitting streak',                prog:()=>[Math.min(3,streak()),3]},
+ {id:'streak7',icon:'🌋', label:'Full Week',       desc:'7-day sitting streak',                prog:()=>[Math.min(7,streak()),7]},
+ {id:'early',  icon:'🌅', label:'Early Bird',   secret:true, desc:'A sitting before 8am',      prog:()=>[S.badgeMarks.early?1:0,1]},
+ {id:'night',  icon:'🌙', label:'Night Owl',    secret:true, desc:'A sitting after 10pm',      prog:()=>[S.badgeMarks.night?1:0,1]},
+ {id:'weekend',icon:'🧺', label:'Weekend Rep',  secret:true, desc:'A weekend sitting',         prog:()=>[S.badgeMarks.weekend?1:0,1]},
+];
+function checkBadges(){
+  BADGES.forEach(b=>{
+    const[d,t]=b.prog();
+    if(t>0&&d>=t&&!S.badgesEarned.includes(b.id)){
+      S.badgesEarned.push(b.id);save();
+      toast(b.icon+' Badge earned: '+b.label+'!');
+    }
+  });
+}
+function markTimeBadges(){
+  const h=new Date().getHours(),dy=new Date().getDay();
+  if(h<8)S.badgeMarks.early=true;
+  if(h>=22)S.badgeMarks.night=true;
+  if(dy===0||dy===6)S.badgeMarks.weekend=true;
+}
+
+// ---------- render ----------
+const $=id=>document.getElementById(id);
+function toast(msg){
+  const t=$('toast');t.textContent=msg;t.classList.remove('hidden');t.style.opacity=1;
+  setTimeout(()=>{t.style.opacity=0;setTimeout(()=>t.classList.add('hidden'),350);},2600);
+}
+function renderAll(){renderStats();renderPath();renderFree();renderBadges();renderMisses();}
+function renderStats(){
+  const done=ALL_NODES.filter(nodeDone).length;
+  $('st-path').textContent=Math.round(done/ALL_NODES.length*100)+'%';
+  const t=todayKey();
+  $('st-today').textContent=Object.values(S.history[t]||{}).reduce((a,b)=>a+b,0);
+  $('st-streak').textContent=streak();
+  $('st-mins').textContent=S.minutes[t]||0;
+  $('st-badges').textContent=S.badgesEarned.length;
+}
+function renderPath(){
+  const el=$('pmap');el.innerHTML='';
+  const cur=ALL_NODES.find(n=>!nodeDone(n));
+  let pos=0;
+  PATH.forEach(u=>{
+    const done=u.nodes.filter(nodeDone).length;
+    el.insertAdjacentHTML('beforeend',
+      `<div class="pmap-unit"><div class="u-dot">${u.icon}</div><div><div class="u-name">${u.unit}</div><div class="u-prog">${done}/${u.nodes.length} done</div></div></div>`);
+    u.nodes.forEach(n=>{
+      pos++;
+      const isDone=nodeDone(n),isCur=cur&&cur.id===n.id;
+      const cls=isDone?'done':isCur?'current':'up';
+      const auto=n.type==='lesson'&&!S.pathDone.includes(n.id)&&isDone;
+      const div=document.createElement('div');
+      div.className='pmap-node '+cls;
+      div.innerHTML=`<div class="pmap-dot">${isDone?'✓':pos}</div>
+        <div style="flex:1">
+          <div class="pmap-title"><span class="chip ${n.chip}">${n.type==='lesson'?n.kit.toUpperCase():(CAT_LABEL[n.cat]||'APP')}</span>${n.title}${auto?' <span class="auto-note">✓ synced from kit</span>':''}</div>
+          <div class="pmap-sub">${n.concepts}</div>
+          <div class="pmap-meta">${n.min} min sitting${n.type==='lesson'?' · start: lesson '+n.lessons[0]+' · stop after: lesson '+n.lessons[n.lessons.length-1]:''}</div>
+          ${isCur?`<button class="btn btn-sm" data-go="${n.id}">▶ Start this sitting</button>`:''}
+          ${!isDone&&!isCur?`<button class="btn-ghost btn-sm" data-go="${n.id}" style="margin-top:8px">Jump here</button>`:''}
+          ${isDone&&S.pathDone.includes(n.id)?`<button class="btn-ghost btn-sm" data-undo="${n.id}" style="margin-top:8px">Undo</button>`:''}
+        </div>`;
+      el.appendChild(div);
+    });
+  });
+  el.querySelectorAll('[data-go]').forEach(b=>b.onclick=e=>{e.stopPropagation();startNode(b.dataset.go);});
+  el.querySelectorAll('[data-undo]').forEach(b=>b.onclick=e=>{e.stopPropagation();S.pathDone=S.pathDone.filter(x=>x!==b.dataset.undo);save();renderAll();});
+}
+function renderBadges(){
+  const el=$('badges');el.innerHTML='';
+  let secretHidden=0;
+  BADGES.forEach(b=>{
+    const got=S.badgesEarned.includes(b.id);
+    if(b.secret&&!got){secretHidden++;return;}
+    const[d,t]=b.prog();
+    el.insertAdjacentHTML('beforeend',
+      `<div class="badge-tile${got?' got':''}" title="${b.desc}">
+        <div class="badge-ico">${b.icon}</div><div class="badge-name">${b.label}</div>
+        <div class="badge-prog">${got?'Earned':d+'/'+t}</div></div>`);
+  });
+  if(secretHidden)el.insertAdjacentHTML('beforeend',
+    `<div class="badge-tile secret"><div class="badge-ico">✨</div><div class="badge-name">${secretHidden} surprise badge${secretHidden>1?'s':''}</div><div class="badge-prog">found by playing</div></div>`);
+}
+function renderMisses(){
+  const ml=$('miss-list');ml.innerHTML='';
+  (S.misses[todayKey()]||[]).forEach(m=>{const li=document.createElement('li');li.textContent=m;ml.appendChild(li);});
+}
+
+// ---------- free mode ----------
 function buildQueue(){
   const doubles=ITEMS.filter(i=>i.perDay>1);
   const dayN=Math.floor(Date.now()/864e5);
   const dbl=doubles[dayN%doubles.length];
-  const q=[dbl.id];
-  // one lesson (rotate sql/excel/bi kit lessons)
-  const lessons=['kit-sql','kit-excel','kit-bi'];
-  q.push(lessons[dayN%lessons.length]);
-  // one test item from a DIFFERENT category than the double
-  const other=ITEMS.find(i=>i.test&&i.cat!==dbl.cat&&i.perDay>=1&&!q.includes(i.id));
+  const lessons=['kit-sql','kit-excel','kit-pbi'];
+  const q=[dbl.id,lessons[dayN%lessons.length]];
+  const other=ITEMS.find(i=>i.cat!==dbl.cat&&!q.includes(i.id));
   if(other)q.push(other.id);
-  // talk-track or mock alternating days
-  q.push(dayN%2? 'talk-track':'excel-int');
-  // second visit of the double, spaced to the end
+  q.push(dayN%2?'talk-track':'excel-int');
   q.push(dbl.id);
   return q;
 }
-function ensureQueue(){ if(!S.queue){S.queue=buildQueue();S.done=[];save();} S.done=S.done||[]; }
-
-// ---------- dashboard render ----------
-const $=id=>document.getElementById(id);
-function renderDash(){
+function ensureQueue(){if(!S.queue){S.queue=buildQueue();S.freeDone=[];save();}}
+function freeNextIx(){for(let i=0;i<S.queue.length;i++)if(!S.freeDone.includes(i))return i;return -1;}
+const doneToday=id=>(S.history[todayKey()]||{})[id]||0;
+function weekDaysUsed(id){
+  let n=0;const now=new Date();
+  for(let d=0;d<7;d++){const k=new Date(now-d*864e5).toISOString().slice(0,10);if((S.history[k]||{})[id])n++;}
+  return n;
+}
+function renderFree(){
   ensureQueue();
-  // stats
-  const t=todayKey(), hist=S.history[t]||{};
-  $('st-today').textContent=Object.values(hist).reduce((a,b)=>a+b,0);
-  let wk=0;const now=new Date();
-  for(let d=0;d<7;d++){const k=new Date(now-d*864e5).toISOString().slice(0,10);
-    wk+=Object.values(S.history[k]||{}).reduce((a,b)=>a+b,0);}
-  $('st-week').textContent=wk;
-  let streak=0;
-  for(let d=0;;d++){const k=new Date(now-d*864e5).toISOString().slice(0,10);
-    const c=Object.values(S.history[k]||{}).reduce((a,b)=>a+b,0);
-    if(c>0)streak++;else if(d===0)continue;else break;
-    if(d>365)break;}
-  $('st-streak').textContent=streak;
-  $('st-mins').textContent=S.minutes[t]||0;
-  // queue
   const qEl=$('queue');qEl.innerHTML='';
   S.queue.forEach((id,ix)=>{
     const it=ITEMS.find(i=>i.id===id);if(!it)return;
+    const isDone=S.freeDone.includes(ix),isCur=!isDone&&ix===freeNextIx();
     const div=document.createElement('div');
-    const isDone=S.done.includes(ix);
-    const isCurrent=!isDone&&ix===nextIx();
-    div.className='queue-item'+(isDone?' done':'')+(isCurrent?' current':'');
-    div.innerHTML=`<span class="badge b-${it.cat}">${CAT_LABEL[it.cat]}</span>
-      <span class="qi-name">${it.name}</span>
-      <span class="qi-min">${it.min}m</span>
-      <button class="qi-x" title="Remove" data-ix="${ix}">×</button>`;
-    div.querySelector('.qi-x').onclick=e=>{e.stopPropagation();removeAt(ix);};
+    div.className='queue-item'+(isDone?' done':'')+(isCur?' current':'');
+    div.innerHTML=`<span class="chip ${CAT_CHIP[it.cat]}">${CAT_LABEL[it.cat]}</span>
+      <span class="qi-name">${it.name}</span><span class="qi-min">${it.min}m</span>
+      <button class="qi-x" data-ix="${ix}">×</button>`;
+    div.querySelector('.qi-x').onclick=()=>{S.queue.splice(ix,1);S.freeDone=S.freeDone.filter(d=>d!==ix).map(d=>d>ix?d-1:d);save();renderFree();};
     qEl.appendChild(div);
   });
-  $('btn-start').textContent = nextIx()<0 ? 'Loop complete — add more or rest' : 'Start next sitting';
-  // library
+  $('btn-start-free').textContent=freeNextIx()<0?'Queue complete — add more or rest':'Start next sitting';
   const lib=$('library');lib.innerHTML='';
   ITEMS.forEach(it=>{
-    const used=doneToday(it.id), wkd=weekDaysUsed(it.id);
-    const capped=used>=it.perDay;
+    const used=doneToday(it.id),wkd=weekDaysUsed(it.id);
     const row=document.createElement('div');row.className='lib-item';
-    row.innerHTML=`<span class="badge b-${it.cat}">${CAT_LABEL[it.cat]}</span>
+    row.innerHTML=`<span class="chip ${CAT_CHIP[it.cat]}">${CAT_LABEL[it.cat]}</span>
       <span class="li-name">${it.name}</span>
-      <span class="li-week">${used}/${it.perDay} today · ${wkd}/${it.perWeek} days</span>
-      <button class="li-add" ${capped&&!S.queue.filter((q,i)=>q===it.id&&!S.done.includes(i)).length?'':''}>Add</button>`;
-    row.querySelector('.li-add').onclick=()=>{S.queue.push(it.id);save();renderDash();};
-    if(capped)row.style.opacity=.5;
+      <select title="Minutes"><option>15</option><option ${it.min>=18?'selected':''}>20</option><option ${it.min>=25?'selected':''}>25</option><option>30</option></select>
+      <span class="li-week">${used}/${it.perDay}d · ${wkd}/${it.perWeek}w</span>
+      <button class="li-add">Add</button>`;
+    row.querySelector('.li-add').onclick=()=>{
+      const mins=parseInt(row.querySelector('select').value,10);
+      S.queue.push(it.id);S.queueMins=S.queueMins||{};S.queueMins[S.queue.length-1]=mins;
+      save();renderFree();toast('Added: '+it.name+' ('+mins+'m)');
+    };
+    if(used>=it.perDay)row.style.opacity=.55;
     lib.appendChild(row);
   });
-  // misses
-  const ml=$('miss-list');ml.innerHTML='';
-  (S.misses[t]||[]).forEach(m=>{const li=document.createElement('li');li.textContent=m;ml.appendChild(li);});
-}
-function nextIx(){for(let i=0;i<S.queue.length;i++)if(!S.done.includes(i))return i;return -1;}
-function removeAt(ix){
-  S.queue.splice(ix,1);
-  S.done=S.done.filter(d=>d!==ix).map(d=>d>ix?d-1:d);
-  save();renderDash();
 }
 
 // ---------- session ----------
-let timerInt=null,remaining=0,elapsedMin=0,paused=false,activeIx=-1;
-function startNext(){
-  const ix=nextIx();if(ix<0)return;
-  activeIx=ix;
+let timerInt=null,remaining=0,paused=false,active=null; // active={kind:'node'|'free', id|ix, min, name, ...}
+function startNode(id){
+  const n=ALL_NODES.find(x=>x.id===id);if(!n)return;
+  const url=n.type==='lesson'?lessonURL(n.kit,n.lessons[0]):n.url;
+  openSession({kind:'node',id:n.id,min:n.min,name:n.title,concepts:n.concepts,chip:n.chip,
+    label:n.type==='lesson'?n.kit.toUpperCase():(CAT_LABEL[n.cat]||'APP'),url,local:n.local,
+    stopNote:n.type==='lesson'?('Do lessons '+n.lessons.join(', ')+' then stop and hit Done.'):null});
+}
+function startFree(){
+  const ix=freeNextIx();if(ix<0)return;
   const it=ITEMS.find(i=>i.id===S.queue[ix]);
-  $('s-badge').className='badge b-'+it.cat;
-  $('s-badge').textContent=CAT_LABEL[it.cat];
-  $('s-name').textContent=it.name;
+  const mins=(S.queueMins&&S.queueMins[ix])||it.min;
+  openSession({kind:'free',ix,id:it.id,min:mins,name:it.name,concepts:'',chip:CAT_CHIP[it.cat],label:CAT_LABEL[it.cat],url:it.url,local:it.local});
+}
+function openSession(a){
+  active=a;
+  $('s-chip').className='chip '+a.chip;$('s-chip').textContent=a.label;
+  $('s-name').textContent=a.name;
+  $('s-concepts').textContent=(a.stopNote?a.stopNote+' · ':'')+(a.concepts||'');
   const fw=$('frame-wrap');fw.innerHTML='';
-  // recall overlay first
   const ov=document.createElement('div');ov.className='recall-overlay';
   ov.innerHTML=`<h3>Before you open it</h3>
-    <p>Take up to 2 minutes and say out loud what your LAST sitting on ${CAT_LABEL[it.cat]} covered. No peeking. This retrieval step is the cheapest boost in the whole system.</p>
+    <p>Take up to 2 minutes and say out loud what your LAST sitting on ${a.label} covered. No peeking. Then start the timer.</p>
+    ${a.stopNote?`<p><b style="color:var(--accent)">This sitting: ${a.stopNote}</b></p>`:''}
     <button class="btn">I recalled it — start the timer</button>`;
-  ov.querySelector('button').onclick=()=>{ov.remove();mountApp(it);beginTimer(it.min);};
+  ov.querySelector('button').onclick=()=>{ov.remove();mount(a);beginTimer(a.min);};
   fw.appendChild(ov);
   $('session').classList.remove('hidden');
-  remaining=it.min*60;paused=true;renderTimer();
+  remaining=a.min*60;paused=true;renderTimer();
 }
-function mountApp(it){
+function mount(a){
   const fw=$('frame-wrap');
-  if(it.url){
-    const f=document.createElement('iframe');f.src=it.url;f.title=it.name;
-    f.setAttribute('allow','fullscreen');
+  if(a.url){
+    const f=document.createElement('iframe');f.src=a.url;f.title=a.name;f.setAttribute('allow','fullscreen');
     fw.appendChild(f);
   }else{
     const d=document.createElement('div');d.className='no-embed';
-    d.innerHTML=`<h3>This one runs locally</h3><p>${it.local||''}</p><p>Do the sitting there, keep this timer running, then hit Done.</p>`;
+    d.innerHTML=`<h3>This one runs outside the frame</h3><p>${a.local||''}</p><p>Keep this timer running, then hit Done.</p>`;
     fw.appendChild(d);
   }
 }
 function beginTimer(mins){
-  remaining=mins*60;elapsedMin=0;paused=false;
+  remaining=mins*60;paused=false;
   clearInterval(timerInt);
-  timerInt=setInterval(()=>{
-    if(paused)return;
-    remaining--;
-    if(remaining%60===0&&remaining>=0)elapsedMin=mins-remaining/60;
-    renderTimer();
-  },1000);
+  timerInt=setInterval(()=>{if(!paused){remaining--;renderTimer();}},1000);
   renderTimer();
 }
 function renderTimer(){
-  const t=$('timer');
-  const r=Math.abs(remaining);
+  const t=$('timer'),r=Math.abs(remaining);
   const mm=String(Math.floor(r/60)).padStart(2,'0'),ss=String(r%60).padStart(2,'0');
   t.textContent=(remaining<0?'+':'')+mm+':'+ss;
   t.classList.toggle('over',remaining<0);
@@ -351,49 +604,100 @@ function renderTimer(){
 function finishSitting(markDone){
   clearInterval(timerInt);timerInt=null;
   document.title='PrepLoop — one app, every rep';
-  if(markDone&&activeIx>=0){
-    const id=S.queue[activeIx];
-    const it=ITEMS.find(i=>i.id===id);
-    S.done.push(activeIx);
+  if(markDone&&active){
     const t=todayKey();
-    S.history[t]=S.history[t]||{};S.history[t][id]=(S.history[t][id]||0)+1;
-    const spent=Math.max(1,Math.round(it.min-Math.max(0,remaining)/60));
+    S.history[t]=S.history[t]||{};
+    S.history[t][active.id]=(S.history[t][active.id]||0)+1;
+    const spent=Math.max(1,Math.round(active.min-Math.max(0,remaining)/60));
     S.minutes[t]=(S.minutes[t]||0)+spent;
-    save();
+    if(active.kind==='node'&&!S.pathDone.includes(active.id))S.pathDone.push(active.id);
+    if(active.kind==='free')S.freeDone.push(active.ix);
+    markTimeBadges();save();checkBadges();
   }
-  $('session').classList.add('hidden');
-  $('frame-wrap').innerHTML='';
-  activeIx=-1;
-  renderDash();
-  if(markDone&&nextIx()>=0){
-    // brief breather, then offer the next one automatically
-    setTimeout(()=>{ if(confirm('Sitting logged. Start the next one now, or take a spacing break?\n\nOK = start next · Cancel = break (spacing between sittings is where retention comes from)')) startNext(); },200);
+  $('session').classList.add('hidden');$('frame-wrap').innerHTML='';
+  const wasNode=active&&active.kind==='node',wasDone=markDone;
+  active=null;renderAll();
+  if(wasDone){
+    const next=wasNode?ALL_NODES.find(n=>!nodeDone(n)):null;
+    const nfIx=!wasNode?freeNextIx():-1;
+    if(next||nfIx>=0){
+      setTimeout(()=>{
+        if(confirm('Sitting logged. Start the next step now, or take a spacing break?\n\nOK = next · Cancel = break (the gap between sittings is where retention comes from)')){
+          if(wasNode&&next)startNode(next.id);else if(nfIx>=0)startFree();
+        }
+      },200);
+    }else if(wasNode){toast('🏁 Path complete!');}
   }
 }
 
-// ---------- wire up ----------
-document.querySelectorAll('.prof-card[data-prof]').forEach(b=>b.onclick=()=>{
-  S.prof=b.dataset.prof;save();showDash();
-});
-function showDash(){
-  $('screen-prof').classList.add('hidden');
-  $('screen-dash').classList.remove('hidden');
-  $('prof-pill').textContent='Data Analyst';
-  renderDash();
+// ---------- auth (unified with Analyst Prep Kit) ----------
+function authReady(){return typeof window.getCurrentUser==='function';}
+async function refreshAuthUI(){
+  const b=$('btn-auth');
+  if(!authReady()){b.textContent='Sign in';return;}
+  try{
+    const u=await window.getCurrentUser();
+    b.textContent=u?(u.email?u.email.split('@')[0]+' · sign out':'Sign out'):'Sign in';
+    b.dataset.in=u?'1':'';
+  }catch(e){b.textContent='Sign in';}
 }
-$('btn-start').onclick=startNext;
+$('btn-auth').onclick=async()=>{
+  if(!authReady()){toast('Auth is loading, try again in a second');return;}
+  if($('btn-auth').dataset.in){await window.signOut();toast('Signed out');refreshAuthUI();return;}
+  $('auth-modal').classList.remove('hidden');
+};
+$('au-close').onclick=()=>$('auth-modal').classList.add('hidden');
+$('au-in').onclick=async()=>{
+  try{await window.signInWithEmail($('au-email').value.trim(),$('au-pw').value);
+    $('auth-modal').classList.add('hidden');toast('Signed in');refreshAuthUI();
+  }catch(e){$('au-msg').textContent=e.message||'Sign-in failed';}
+};
+$('au-up').onclick=async()=>{
+  try{await window.signUpWithEmail($('au-email').value.trim(),$('au-pw').value);
+    $('au-msg').textContent='Account created — check your email if confirmation is required.';
+  }catch(e){$('au-msg').textContent=e.message||'Sign-up failed';}
+};
+$('au-google').onclick=async()=>{
+  try{await window.signInWithGoogle();}catch(e){$('au-msg').textContent=e.message||'Google sign-in failed';}
+};
+window.addEventListener('load',()=>{setTimeout(refreshAuthUI,800);});
+
+// ---------- wiring ----------
+document.querySelectorAll('.prof-card[data-prof]').forEach(b=>b.onclick=()=>{S.prof=b.dataset.prof;save();showMain();});
+function showMain(){
+  $('screen-prof').classList.add('hidden');
+  $('screen-main').classList.remove('hidden');
+  $('prof-pill').textContent='Data Analyst';
+  setMode(S.mode);renderAll();
+}
+function setMode(m){
+  S.mode=m;save();
+  document.querySelectorAll('#mode-tabs button').forEach(b=>b.classList.toggle('on',b.dataset.mode===m));
+  $('pane-path').classList.toggle('hidden',m!=='path');
+  $('pane-free').classList.toggle('hidden',m!=='free');
+}
+document.querySelectorAll('#mode-tabs button').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
+$('btn-start-free').onclick=startFree;
 $('btn-done').onclick=()=>finishSitting(true);
 $('btn-exit').onclick=()=>finishSitting(false);
 $('btn-pause').onclick=e=>{paused=!paused;e.target.textContent=paused?'Resume':'Pause';};
-$('btn-reset').onclick=()=>{if(confirm('Rebuild today\'s queue from scratch? Done history is kept.')){S.queue=null;S.done=[];save();ensureQueue();renderDash();}};
+$('btn-theme').onclick=()=>{
+  const h=document.documentElement;
+  h.dataset.theme=h.dataset.theme==='dark'?'light':'dark';
+  localStorage.setItem('preploop-theme',h.dataset.theme);
+};
+(function(){const t=localStorage.getItem('preploop-theme');if(t)document.documentElement.dataset.theme=t;})();
 $('miss-add').onclick=()=>{
   const v=$('miss-in').value.trim();if(!v)return;
   const t=todayKey();S.misses[t]=S.misses[t]||[];S.misses[t].push(v);
-  $('miss-in').value='';save();renderDash();
+  $('miss-in').value='';save();renderMisses();
 };
 $('miss-in').addEventListener('keydown',e=>{if(e.key==='Enter')$('miss-add').click();});
+// re-check kit progress when returning to the tab (lesson finished inside a kit in another tab)
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&S.prof)renderAll();});
+window.addEventListener('storage',()=>{if(S.prof)renderAll();});
 
-if(S.prof)showDash();
+if(S.prof)showMain();
 </script>
 </body>
 </html>
