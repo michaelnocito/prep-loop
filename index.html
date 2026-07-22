@@ -331,7 +331,8 @@ function kitDoneLessons(kit){
 }
 function lessonURL(kit,firstId){
   const m=KIT_META[kit];
-  return KIT+m.path+'/'+(m.deep&&firstId!=null?('#lesson-'+firstId):'');
+  // -restart flag: kits reset that lesson's saved stage so a sitting always starts at the beginning (BUG-1)
+  return KIT+m.path+'/'+(m.deep&&firstId!=null?('#lesson-'+firstId+'-restart'):'');
 }
 
 // ---------- auto miss list (reads the kits' spaced-recall queues) ----------
