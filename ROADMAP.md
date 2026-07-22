@@ -26,7 +26,7 @@ Shipped so far:
 - Python and Stats kits now support `#lesson-<id>` deep links (with `-restart`); PrepLoop marks them `deep:true`.
 - Unguided library now lists all 6 kits (Stats added).
 
-Gate decision (Mike, 2026-07-22): **HARD gate**, shipped same day. Direct top-level visits to the 6 kit pages get a full-screen hand-off overlay pointing to PrepLoop (in the shared auth script). PrepLoop-emitted links carry `?via=loop`, which the gate lets through; framed loads skip the gate entirely. It is a courtesy funnel, not security — the bypass flag is visible in the URL.
+Gate decision (Mike, 2026-07-22, revised same day): **NO gate.** The hard gate shipped and was reverted hours later — it dead-ended visitors on PrepLoop's role picker with no visible way into the kits. New model: the analyst-prep-kit hub is the landing page, retitled **"Grain — Analyst Prep Kit"** (grain design system, no visual changes), with PrepLoop as a featured "Guided" card above the kit list. PrepLoop is one door among several, not the only door. The `?via=loop` bypass flag was reverted along with the gate. Framed-mode auth suppression and the `-restart` fix remain.
 
 Still open:
 - GA4 (G-6C09BL3WH1) double-counts a sitting (PrepLoop pageview + framed kit pageview). Accepted for now.
