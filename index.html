@@ -150,6 +150,15 @@ html[data-theme="dark"] .pmap-node.current .pmap-dot{color:#082032}
 .recall-overlay h3{font-size:22px}
 .recall-overlay p{color:var(--dim);max-width:480px}
 
+/* journey journal */
+.journal{font-size:13px;color:var(--dim);max-height:320px;overflow:auto;position:relative;padding-left:16px}
+.journal:before{content:'';position:absolute;left:4px;top:6px;bottom:6px;width:2px;background:var(--surf2);border-radius:2px}
+.j-entry{position:relative;margin-bottom:12px;line-height:1.5}
+.j-entry:before{content:'';position:absolute;left:-16px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.j-entry .j-date{font-family:var(--font-mono,monospace);font-size:11px;color:var(--accent)}
+.j-entry b{color:var(--ink)}
+.j-next{font-style:italic;opacity:.75}
+.j-next:before{background:var(--surf2);border:1px solid var(--line)}
 /* misc */
 .miss-row{display:flex;gap:8px;margin-top:10px}
 .miss-row input{flex:1;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--ink);padding:8px 10px;font-size:14px}
@@ -233,6 +242,8 @@ html[data-theme="dark"] #toast{color:#082032}
       <div class="panel">
         <h2>Badges</h2>
         <div class="badge-grid" id="badges"></div>
+        <h2 style="margin-top:18px">Journey journal</h2>
+        <div id="journal" class="journal"></div>
       </div>
       <div class="panel" style="margin-top:14px">
         <h2>Miss list</h2>
@@ -374,6 +385,7 @@ function load(){
   s.pathDone=s.pathDone||[];
   s.history=s.history||{}; s.minutes=s.minutes||{}; s.misses=s.misses||{};
   s.badgesEarned=s.badgesEarned||[]; s.badgeMarks=s.badgeMarks||{};
+  s.pathLog=s.pathLog||{};
   if(s.queueDate!==todayKey()){s.queueDate=todayKey();s.queue=null;s.freeDone=[];}
   s.freeDone=s.freeDone||[];
   return s;
@@ -388,8 +400,14 @@ function nodeDone(n){
   }
   return false;
 }
+function stampPathLog(){
+  let changed=false;
+  ALL_NODES.forEach(n=>{if(nodeDone(n)&&!S.pathLog[n.id]){S.pathLog[n.id]=todayKey();changed=true;}});
+  if(changed)save();
+}
 function resetPath(){
   S.pathDone=[];
+  S.pathLog={};
   S.kitBaseline={};
   Object.keys(KIT_META).forEach(k=>{S.kitBaseline[k]=kitDoneLessons(k).slice();});
   S.badgesEarned=S.badgesEarned.filter(id=>!['u1','u2','u3','u4','path'].includes(id));
@@ -443,7 +461,33 @@ function toast(msg){
   const t=$('toast');t.textContent=msg;t.classList.remove('hidden');t.style.opacity=1;
   setTimeout(()=>{t.style.opacity=0;setTimeout(()=>t.classList.add('hidden'),350);},2600);
 }
-function renderAll(){renderStats();renderPath();renderFree();renderBadges();renderMisses();}
+function renderAll(){stampPathLog();renderStats();renderPath();renderFree();renderBadges();renderJournal();renderMisses();}
+// ---------- journey journal ----------
+const J_OPENERS=['From there you moved to','Next you took on','Then it was','You pushed on into','After that came','You carried it into'];
+const J_VERBS={lesson:'where you learned',app:'where you put it to work on'};
+function fmtDate(iso){const d=new Date(iso+'T12:00:00');return d.toLocaleDateString(undefined,{month:'short',day:'numeric'});}
+function renderJournal(){
+  const el=$('journal');el.innerHTML='';
+  const entries=ALL_NODES.map((n,i)=>({n,i,date:S.pathLog[n.id]})).filter(e=>e.date&&nodeDone(e.n));
+  entries.sort((a,b)=>a.date===b.date?a.i-b.i:(a.date<b.date?-1:1));
+  if(!entries.length){
+    el.innerHTML='<div class="j-entry j-next">Your journey hasn\'t started yet. Finish the first step on the path and this page begins to write itself.</div>';
+    return;
+  }
+  entries.forEach((e,ix)=>{
+    const n=e.n;
+    const opener=ix===0?'Your journey began with':J_OPENERS[(ix-1)%J_OPENERS.length];
+    const verb=J_VERBS[n.type]||'where you worked on';
+    el.insertAdjacentHTML('beforeend',
+      `<div class="j-entry"><span class="j-date">${fmtDate(e.date)}</span><br>${opener} <b>${n.title}</b>, ${verb} ${n.concepts}.</div>`);
+  });
+  const next=ALL_NODES.find(n=>!nodeDone(n));
+  if(next){
+    el.insertAdjacentHTML('beforeend',`<div class="j-entry j-next">The next page is waiting: <b>${next.title}</b>.</div>`);
+  }else{
+    el.insertAdjacentHTML('beforeend','<div class="j-entry"><b>🏁 The loop is complete.</b> Every skill on this path has a date next to it. Walk into that interview like you wrote the book, because you did.</div>');
+  }
+}
 function renderStats(){
   const done=ALL_NODES.filter(nodeDone).length;
   $('st-path').textContent=Math.round(done/ALL_NODES.length*100)+'%';
