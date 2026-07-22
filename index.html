@@ -331,8 +331,9 @@ function kitDoneLessons(kit){
 }
 function lessonURL(kit,firstId){
   const m=KIT_META[kit];
-  // -restart flag: kits reset that lesson's saved stage so a sitting always starts at the beginning (BUG-1)
-  return KIT+m.path+'/'+(m.deep&&firstId!=null?('#lesson-'+firstId+'-restart'):'');
+  // ?via=loop passes the kits' hard gate (PrepLoop-emitted links only);
+  // -restart makes the kit reset that lesson's saved stage so a sitting always starts at the beginning (BUG-1)
+  return KIT+m.path+'/?via=loop'+(m.deep&&firstId!=null?('#lesson-'+firstId+'-restart'):'');
 }
 
 // ---------- auto miss list (reads the kits' spaced-recall queues) ----------
@@ -359,7 +360,7 @@ function getKitMisses(){
     });
     Object.values(bySrc).forEach(m=>{
       m.title=lessonTitle(kit,m.srcId);
-      m.link=KIT_META[kit].deep&&m.srcId!=null?lessonURL(kit,m.srcId):KIT+KIT_META[kit].path+'/';
+      m.link=KIT_META[kit].deep&&m.srcId!=null?lessonURL(kit,m.srcId):KIT+KIT_META[kit].path+'/?via=loop';
       out.push(m);
     });
   });
