@@ -26,8 +26,9 @@ Shipped so far:
 - Python and Stats kits now support `#lesson-<id>` deep links (with `-restart`); PrepLoop marks them `deep:true`.
 - Unguided library now lists all 6 kits (Stats added).
 
+Gate decision (Mike, 2026-07-22): **HARD gate**, shipped same day. Direct top-level visits to the 6 kit pages get a full-screen hand-off overlay pointing to PrepLoop (in the shared auth script). PrepLoop-emitted links carry `?via=loop`, which the gate lets through; framed loads skip the gate entirely. It is a courtesy funnel, not security — the bypass flag is visible in the URL.
+
 Still open:
-- **OPEN (Mike):** top-level interstitial — hard gate (block kit content) vs soft gate (banner + PrepLoop link, content still usable). Recommendation: soft gate first; nothing breaks for existing users or SEO.
 - GA4 (G-6C09BL3WH1) double-counts a sitting (PrepLoop pageview + framed kit pageview). Accepted for now.
 
 Original scope sketch:
