@@ -252,6 +252,14 @@ html[data-theme="dark"] #toast{color:#082032}
         <button class="btn" id="btn-start-free" style="width:100%;margin-top:8px">Start next sitting</button>
         <h2 style="margin-top:18px">Library</h2>
         <div id="library"></div>
+        <h2 style="margin-top:18px">Build your loop</h2>
+        <p class="subtle" style="margin:6px 0 10px">Pick the concepts you want to drill — each becomes a lesson sitting in your queue. Save a mix you like as a template.</p>
+        <div id="loop-templates" style="margin-bottom:10px"></div>
+        <div id="loop-concepts" class="subtle">Loading concepts…</div>
+        <div style="display:flex;gap:8px;margin-top:10px">
+          <button class="btn" id="btn-loop-add" style="flex:1">Add selected to queue</button>
+          <button class="btn-ghost" id="btn-loop-save">Save as template</button>
+        </div>
       </div>
     </div>
 
@@ -654,7 +662,7 @@ function renderFree(){
   ensureQueue();
   const qEl=$('queue');qEl.innerHTML='';
   S.queue.forEach((id,ix)=>{
-    const it=ITEMS.find(i=>i.id===id);if(!it)return;
+    const it=resolveItem(id);if(!it)return;
     const isDone=S.freeDone.includes(ix),isCur=!isDone&&ix===freeNextIx();
     const div=document.createElement('div');
     div.className='queue-item'+(isDone?' done':'')+(isCur?' current':'');
@@ -683,6 +691,87 @@ function renderFree(){
     lib.appendChild(row);
   });
 }
+
+// ---------- loop builder (custom concept sittings + templates) ----------
+const LOOP_CATS={sql:'sql',excel:'excel',powerbi:'bi',tableau:'bi',python:'py',stats:'py'};
+let LOOP_IX=null; // kit → {name, path, lessons} from the kits' search index
+function loopConcepts(){
+  const out=[];
+  Object.entries(LOOP_IX||{}).forEach(([kit,k])=>{
+    const byU={};
+    (k.lessons||[]).forEach(l=>{(byU[l.u]=byU[l.u]||[]).push(l.id);});
+    Object.entries(byU).forEach(([u,ids])=>out.push({key:kit+'|'+u,kit,kitName:k.name,unit:u,lessons:ids}));
+  });
+  return out;
+}
+function customSit(c){
+  S.customSits=S.customSits||{};S.customSeq=(S.customSeq||0)+1;
+  const id='cs-'+S.customSeq;
+  S.customSits[id]={kit:c.kit,unit:c.unit,lessons:c.lessons,min:Math.min(30,Math.max(15,c.lessons.length*8)),name:c.kitName+' — '+c.unit};
+  return id;
+}
+function resolveItem(id){
+  if(id&&id.startsWith('cs-')&&S.customSits&&S.customSits[id]){
+    const c=S.customSits[id];
+    return {id,name:c.name,cat:LOOP_CATS[c.kit]||'sql',min:c.min,custom:c};
+  }
+  return ITEMS.find(i=>i.id===id);
+}
+function renderLoopBuilder(){
+  const el=$('loop-concepts');if(!el)return;
+  if(!LOOP_IX){el.textContent='Loading concepts…';return;}
+  const cs=loopConcepts();
+  if(!cs.length){el.textContent='Could not load the concept list — refresh to retry.';return;}
+  let html='',lastKit='';
+  cs.forEach(c=>{
+    if(c.kit!==lastKit){if(lastKit)html+='</div>';html+='<div style="margin-bottom:8px"><div class="subtle" style="font-weight:700;margin:8px 0 4px">'+c.kitName+'</div>';lastKit=c.kit;}
+    html+='<label style="display:flex;align-items:center;gap:8px;padding:4px 2px;cursor:pointer;font-size:13.5px">'
+      +'<input type="checkbox" data-key="'+c.key+'"> <span>'+c.unit+'</span>'
+      +'<span class="subtle" style="margin-left:auto">'+c.lessons.length+' lesson'+(c.lessons.length>1?'s':'')+'</span></label>';
+  });
+  if(lastKit)html+='</div>';
+  el.innerHTML=html;el.classList.remove('subtle');
+  renderLoopTemplates();
+}
+function selectedConcepts(){
+  const keys=Array.from(document.querySelectorAll('#loop-concepts input:checked')).map(i=>i.dataset.key);
+  return loopConcepts().filter(c=>keys.includes(c.key));
+}
+function queueConcepts(cs){
+  if(!cs.length){toast('Pick at least one concept first');return;}
+  cs.forEach(c=>S.queue.push(customSit(c)));
+  save();renderFree();toast('Added '+cs.length+' sitting'+(cs.length>1?'s':'')+' to the queue');
+}
+function renderLoopTemplates(){
+  const el=$('loop-templates');if(!el)return;
+  const tpl=S.loopTemplates||{};
+  el.innerHTML=Object.keys(tpl).length?'':'';
+  Object.entries(tpl).forEach(([name,keys])=>{
+    const row=document.createElement('div');
+    row.className='lib-item';
+    row.innerHTML='<span class="chip c-mock">LOOP</span><span class="li-name">'+name+'</span>'
+      +'<span class="li-week">'+keys.length+' concept'+(keys.length>1?'s':'')+'</span>'
+      +'<button class="li-add">Queue</button><button class="qi-x" title="Delete template">×</button>';
+    row.querySelector('.li-add').onclick=()=>{
+      const cs=loopConcepts().filter(c=>keys.includes(c.key));
+      if(!cs.length){toast('This template no longer matches any concepts');return;}
+      queueConcepts(cs);
+    };
+    row.querySelector('.qi-x').onclick=()=>{delete S.loopTemplates[name];save();renderLoopTemplates();};
+    el.appendChild(row);
+  });
+}
+$('btn-loop-add').onclick=()=>{ensureQueue();queueConcepts(selectedConcepts());};
+$('btn-loop-save').onclick=()=>{
+  const cs=selectedConcepts();
+  if(!cs.length){toast('Pick the concepts to include first');return;}
+  const name=prompt('Name this loop template:','My loop');
+  if(!name)return;
+  S.loopTemplates=S.loopTemplates||{};
+  S.loopTemplates[name.trim()]=cs.map(c=>c.key);
+  save();renderLoopTemplates();toast('Template saved: '+name.trim());
+};
+fetch(KIT+'assets/search-index.json?v=1').then(r=>r.json()).then(j=>{LOOP_IX=j;renderLoopBuilder();}).catch(()=>{LOOP_IX={};renderLoopBuilder();});
 
 // ---------- session ----------
 let timerInt=null,remaining=0,paused=false,active=null; // active={kind:'node'|'free', id|ix, min, name, ...}
@@ -746,8 +835,16 @@ function openMissSessionKeepTimer(n){
 }
 function startFree(){
   const ix=freeNextIx();if(ix<0)return;
-  const it=ITEMS.find(i=>i.id===S.queue[ix]);
+  const it=resolveItem(S.queue[ix]);if(!it)return;
   const mins=(S.queueMins&&S.queueMins[ix])||it.min;
+  if(it.custom){
+    const c=it.custom;
+    openSession({kind:'free',ix,id:it.id,min:mins,name:it.name,
+      concepts:'Lessons '+c.lessons.join(', ')+' — each starts from the top.',
+      chip:CAT_CHIP[it.cat],label:CAT_LABEL[it.cat],url:lessonURL(c.kit,c.lessons[0]),
+      stopNote:'Do lessons '+c.lessons.join(', ')+' then stop and hit Done.'});
+    return;
+  }
   openSession({kind:'free',ix,id:it.id,min:mins,name:it.name,concepts:'',chip:CAT_CHIP[it.cat],label:CAT_LABEL[it.cat],url:it.url,local:it.local});
 }
 function openSession(a){
