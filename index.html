@@ -164,6 +164,12 @@ html[data-theme="dark"] .pmap-node.current .pmap-dot{color:#082032}
 .amiss .am-link{font-size:12px;color:var(--accent);text-decoration:none;white-space:nowrap}
 .amiss .am-link:hover{text-decoration:underline}
 .miss-dose{font-size:11px;color:var(--dim);font-family:var(--font-mono,monospace);margin-bottom:8px}
+/* portfolio step — one generic sitting instead of hardcoded project links */
+.port-card{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:8px;background:var(--bg);display:flex;flex-direction:column;gap:2px}
+.port-card .port-title{font-weight:700;font-size:14px}
+.port-card .port-desc{font-size:12.5px;color:var(--dim)}
+.port-card a.port-link{font-size:12.5px;color:var(--accent);text-decoration:none;margin-top:4px}
+.port-card a.port-link:hover{text-decoration:underline}
 /* clean-run celebration */
 @keyframes pl-pop{0%{transform:scale(.2) rotate(-20deg);opacity:0}60%{transform:scale(1.25) rotate(6deg)}100%{transform:scale(1) rotate(0)}}
 @keyframes pl-ring{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--accent) 55%, transparent)}100%{box-shadow:0 0 0 26px transparent}}
@@ -213,12 +219,12 @@ html[data-theme="dark"] #toast{color:#082032}
   <div class="prof-grid">
     <button class="prof-card" data-prof="data-analyst">
       <h3>Data Analyst</h3>
-      <p>SQL, Excel, one BI tool, portfolio talk-track and mock interviews. 4 units, 25 steps.</p>
+      <p>SQL, Excel, one BI tool, a portfolio step and mock interviews. 4 units, 24 steps.</p>
       <span class="tag">READY</span>
     </button>
     <button class="prof-card" data-prof="data-quality">
       <h3>Data Quality / Conversion Analyst</h3>
-      <p>Profile the source, cleanse and map it, then prove the load with row counts and reconciliation. SQL, Power Query, mocks. 4 units, 27 steps.</p>
+      <p>Profile the source, cleanse and map it, then prove the load with row counts and reconciliation. SQL, Power Query, mocks. 4 units, 26 steps.</p>
       <span class="tag">READY</span>
     </button>
     <div class="prof-card locked"><h3>Business Analyst</h3><p>Requirements, stakeholder cases, SQL and dashboard storytelling.</p><span class="tag">COMING SOON</span></div>
@@ -413,8 +419,7 @@ const PATH_DA=[
   {id:'g-tabarch',  type:'app',    url:BASE+'tableau-archaeology/', chip:'c-sim', min:28, title:'Tableau Archaeology — one case', concepts:'Exploratory analysis, the "walk me through this data" answer', cat:'bi'},
  ]},
  {unit:'Unit 4 · Interview week', icon:'🎤', nodes:[
-  {id:'talk-1',     type:'app', url:BASE+'steam-hidden-gems-list/', chip:'c-talk', min:18, title:'Talk-track: Steam Hidden Gems', concepts:'Out loud: question → method → a query you’re proud of → finding → next step', cat:'talk'},
-  {id:'talk-2',     type:'app', url:'https://github.com/michaelnocito/telco-churn-analysis', chip:'c-talk', min:18, title:'Talk-track: Telco Churn', concepts:'Same drill; write a 5-bullet cheat sheet from memory, then correct it', cat:'talk'},
+  {id:'portfolio',  type:'portfolio', chip:'c-talk', min:20, title:'Work on your portfolio (if applicable)', concepts:'Scope, extend, or rehearse a portfolio piece — skip ahead if a portfolio isn’t part of your target role', cat:'talk'},
   {id:'mock-beh',   type:'app', url:null, local:'Run C:\\Users\\Mike\\Projects\\mikes-interview-kit and open http://localhost:4212', chip:'c-mock', min:18, title:'Behavioral mock (local kit)', concepts:'3-4 questions per sitting, out loud', cat:'mock'},
   {id:'g-dryrun2',  type:'app', url:BASE+'sql-dry-run/',       chip:'c-game', min:18, title:'SQL Dry Run — cold pass', concepts:'No notes; misses go on the miss list', cat:'sql'},
   {id:'mock-excel', type:'app', url:BASE+'excel-interview/',   chip:'c-mock', min:25, title:'Excel Interview mock',   concepts:'Dress rehearsal for a live Excel screen', cat:'mock'},
@@ -457,8 +462,7 @@ const PATH_DQ=[
   {id:'dq-xl-dv',     type:'lesson', kit:'excel', lessons:[19],    chip:'c-excel', min:15, title:'Data validation',       concepts:'Stop bad data at the door instead of cleaning it later'},
   {id:'dq-pbi-clean', type:'lesson', kit:'powerbi', lessons:[402,403,404], chip:'c-bi', min:25, title:'Cleansing in Power Query (BI)', concepts:'Removing duplicates · cleansing text · type coercion & nulls'},
   {id:'dq-pbi-val',   type:'lesson', kit:'powerbi', lessons:[401,405], chip:'c-bi', min:22, title:'Profiling & validation in BI', concepts:'Profiling source data · validation & reconciliation'},
-  {id:'dq-talk-1',    type:'app', url:BASE+'steam-hidden-gems-list/', chip:'c-talk', min:18, title:'Talk-track: data quality story', concepts:'Out loud: what was dirty → how you found it → how you proved the fix', cat:'talk'},
-  {id:'dq-talk-2',    type:'app', url:'https://github.com/michaelnocito/telco-churn-analysis', chip:'c-talk', min:18, title:'Talk-track: Telco Churn', concepts:'Same drill; write a 5-bullet cheat sheet from memory, then correct it', cat:'talk'},
+  {id:'dq-portfolio', type:'portfolio', chip:'c-talk', min:20, title:'Work on your portfolio (if applicable)', concepts:'Scope, extend, or rehearse a portfolio piece — skip ahead if a portfolio isn’t part of your target role', cat:'talk'},
   {id:'dq-mock-beh',  type:'app', url:null, local:'Run C:\\Users\\Mike\\Projects\\mikes-interview-kit and open http://localhost:4212', chip:'c-mock', min:18, title:'Behavioral mock (local kit)', concepts:'3-4 questions per sitting, out loud', cat:'mock'},
   {id:'dq-mock-excel',type:'app', url:BASE+'excel-interview/',   chip:'c-mock', min:25, title:'Excel Interview mock',   concepts:'Dress rehearsal for a live Excel screen', cat:'mock'},
   {id:'dq-dryrun2',   type:'app', url:BASE+'sql-dry-run/',       chip:'c-game', min:18, title:'SQL Dry Run — cold pass', concepts:'No notes; misses go on the miss list', cat:'sql'},
@@ -494,7 +498,7 @@ const ITEMS=[
  {id:'kit-sql',      name:'Prep Kit — SQL lesson',   cat:'sql',  url:KIT+'sql/',                     min:25, perDay:1, perWeek:4},
  {id:'kit-excel',    name:'Prep Kit — Excel lesson', cat:'excel',url:KIT+'excel/',                   min:25, perDay:1, perWeek:3},
  {id:'ss-arch',      name:'Spreadsheet Archaeology', cat:'excel',url:BASE+'spreadsheet-archaeology/',min:28, perDay:1, perWeek:3},
- {id:'talk-track',   name:'Portfolio talk-track',    cat:'talk', url:BASE+'steam-hidden-gems-list/', min:18, perDay:1, perWeek:3},
+ {id:'talk-track',   name:'Work on your portfolio', cat:'talk', type:'portfolio', min:20, perDay:1, perWeek:3},
  {id:'interview-kit',name:'Behavioral mock (local)', cat:'mock', url:null, local:'Run mikes-interview-kit, open http://localhost:4212', min:18, perDay:1, perWeek:3},
  {id:'sql-trail',    name:'SQL Trail (one run)',     cat:'sql',  url:BASE+'sql-trail/',              min:25, perDay:2, perWeek:3},
  {id:'sql-quest',    name:'SQL Space Quest',         cat:'sql',  url:BASE+'sql-quest/',              min:20, perDay:1, perWeek:2},
@@ -871,6 +875,7 @@ let timerInt=null,remaining=0,paused=false,active=null; // active={kind:'node'|'
 function startNode(id){
   const n=ALL_NODES.find(x=>x.id===id);if(!n)return;
   if(n.type==='miss'){openMissSession(n);return;}
+  if(n.type==='portfolio'){openPortfolioSession({kind:'node',id:n.id,min:n.min,name:n.title,chip:'c-talk',label:'TALK'});return;}
   const url=n.type==='lesson'?lessonURL(n.kit,n.lessons[0]):n.url;
   openSession({kind:'node',id:n.id,min:n.min,name:n.title,concepts:n.concepts,chip:n.chip,
     label:n.type==='lesson'?n.kit.toUpperCase():(CAT_LABEL[n.cat]||'APP'),url,local:n.local,
@@ -926,6 +931,31 @@ function openMissSessionKeepTimer(n){
   openMissSession(n);
   if(getKitMisses().length||((S.misses[todayKey()]||[]).length)){remaining=keep;paused=kp;renderTimer();}
 }
+// Portfolio work varies too much per role to hardcode one project — point at the
+// scoping tool plus a couple of finished write-ups instead of a fixed talk-track.
+const PORTFOLIO_LINKS=[
+  {title:'Project Studio', desc:'Scope, plan, build, and present your own portfolio project.', href:KIT+'projects/'},
+  {title:'Steam Hidden Gems (finished write-up)', desc:'See how a full SQL portfolio piece reads start to finish.', href:'https://github.com/michaelnocito/steam-hidden-gems'},
+  {title:'Streaming Hidden Gems (finished write-up)', desc:'A second worked example — same pedagogy, different dataset.', href:'https://github.com/michaelnocito/streaming-hidden-gems'},
+  {title:'Music Hidden Gems (finished write-up)', desc:'A third worked example, if you want to compare approaches.', href:'https://github.com/michaelnocito/music-hidden-gems'},
+];
+function openPortfolioSession(a){
+  active=a;
+  $('s-chip').className='chip c-talk';$('s-chip').textContent='TALK';
+  $('s-name').textContent=a.name;
+  $('s-concepts').textContent='If a portfolio project is part of your target role, use this sitting to scope one or push an existing one forward. If not, hit Done — next.';
+  const fw=$('frame-wrap');fw.innerHTML='';
+  const box=document.createElement('div');
+  box.style.cssText='height:100%;overflow:auto;padding:20px;max-width:640px;margin:0 auto';
+  box.innerHTML=PORTFOLIO_LINKS.map(l=>`<div class="port-card">
+    <div class="port-title">${l.title}</div>
+    <div class="port-desc">${l.desc}</div>
+    <a class="port-link" href="${l.href}" target="_blank" rel="noopener">Open →</a>
+  </div>`).join('');
+  fw.appendChild(box);
+  $('session').classList.remove('hidden');
+  beginTimer(a.min);
+}
 function startFree(){
   const ix=freeNextIx();if(ix<0)return;
   const it=resolveItem(S.queue[ix]);if(!it)return;
@@ -936,6 +966,10 @@ function startFree(){
       concepts:'Lessons '+c.lessons.join(', ')+' — each starts from the top.',
       chip:CAT_CHIP[it.cat],label:CAT_LABEL[it.cat],url:lessonURL(c.kit,c.lessons[0]),
       stopNote:'Do lessons '+c.lessons.join(', ')+' then stop and hit Done.'});
+    return;
+  }
+  if(it.type==='portfolio'){
+    openPortfolioSession({kind:'free',ix,id:it.id,min:mins,name:it.name,chip:'c-talk',label:'TALK'});
     return;
   }
   openSession({kind:'free',ix,id:it.id,min:mins,name:it.name,concepts:'',chip:CAT_CHIP[it.cat],label:CAT_LABEL[it.cat],url:it.url,local:it.local});
