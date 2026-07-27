@@ -37,6 +37,67 @@ Original scope sketch:
 - Kit-side work: honor a restart directive, suppress their own duplicate topbars when framed (detect `window.top !== window.self`), keep writing progress to the same localStorage keys so nothing else breaks.
 - Risks to check: GA4 double-counting inside iframes; kit features that assume top-level window (OAuth redirect for Google sign-in inside an iframe will need to pop out).
 
+## PLAYTEST TRIAGE — 2026-07-27 (tracker project "Preploop")
+
+### PL-2: master reset — clear every kit, game and pathed item from PrepLoop
+
+Mike: "Need to be able to reset all kits and games, all pathed items from here."
+
+Today PrepLoop's Reset path button clears only `pathDone`, the path badges and the
+journal, and snapshots `S.kitBaseline` so kit lessons finished before the reset stop
+counting. The kits' own progress (`sqlkit-v1`, `epk`, `ppk`, `pbikt-v1`, `tpk`, `spk`,
+plus the `*-recalls` / `*-recall-wins` / `*-last-visit` / `*-streak` families) is
+untouched, and the games' localStorage is untouched. Mike wants one control here that
+wipes the lot, so a clean run is one click instead of a tour of every app.
+
+Doable because PrepLoop and the kits share an origin (`michaelnocito.github.io`) — the
+kit keys are readable and writable from PrepLoop today, which is exactly how the auto
+miss list and the auto-complete of path nodes already work. The games are the open part:
+`sql-trail`, `sql-quest` and the arcade apps are same-origin too, but each owns its own
+key family and its own idea of what a reset means (SQL Trail alone keeps player identity,
+graves and cloud run history — wiping the recovery code would orphan his leaderboard runs).
+
+**Requirements:**
+
+- One destructive control, clearly labelled, behind a confirm that names exactly what
+  will be cleared — never a silent wipe.
+- Scoped checkboxes rather than one blunt button: kits · path/PrepLoop · games. Mike's ask
+  is "all", but the confirm should still show the three groups so he can see the blast radius.
+- Must NOT clear `apk-pass` (purchase entitlement), `apk-coach-key`, `sim2-apikey`, or the
+  Supabase session — the same guards the kits' own "Reset all kits" already honours.
+- Build the key list as a **prefix sweep**, not a hand-maintained array. The kits' own
+  reset-all drifted exactly that way (Tableau and Stats silently stopped clearing recall
+  keys) and had to be rewritten as a sweep in analyst-prep-kit v1.175.0. Do not repeat it.
+
+**Open question for Mike:** does "all games" include SQL Trail's player identity and its
+cloud run history, or only local progress? Recommend local progress only, keeping the
+recovery code — losing it costs him leaderboard history he cannot get back, and a reset
+is meant to be a fresh study run, not an account deletion.
+
+Status: **not started, roadmap only.** Small-to-medium; the kit half is straightforward,
+the games half needs the per-game key inventory first.
+
+### PL-3: quick recall leaves the kit lessons; the miss list becomes the review home
+
+Mike: "Remove quick recall they can go to the mistake auto tracker and review. This is on
+the kits lessons." Filed here because PrepLoop's auto miss list IS the mistake tracker he
+is pointing at — but the change itself lands in the analyst-prep-kit repo, where the item
+is written up in full as **[P4]** at the top of that ROADMAP.
+
+PrepLoop's stake: the miss list reads each kit's `<prefix>-recalls` queue, and that queue
+is written when a learner rates a lesson low or mid confidence. Take out the in-lesson
+recall CARDS and the miss list keeps working. Take out the confidence rater as well and
+the miss list goes permanently empty — PrepLoop would be sending people to a review home
+with nothing in it, and the two Recall sweep nodes on the Guided path would always
+celebrate a clean sweep.
+
+So: whatever the kits do, the confidence rater and the queue writes stay. If Mike wants
+recall gone from the kits entirely, PrepLoop needs its own source of misses before that
+ships (wrong Quick Check answers would be the obvious substitute, and PrepLoop does not
+read those today). Blocking question is recorded on [P4].
+
+Status: **blocked on Mike's answer to [P4]; no PrepLoop work until then.**
+
 ## Also parked
 - Sync PrepLoop path progress (`pathDone`, `pathLog`, badges) to Supabase for signed-in users (premium brick; kits' `user_progress` table pattern is the model).
 - Deep-link support for Python and Stats kits (`#lesson-<id>` handler missing there).
