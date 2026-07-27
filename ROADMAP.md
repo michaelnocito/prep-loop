@@ -84,19 +84,21 @@ the kits lessons." Filed here because PrepLoop's auto miss list IS the mistake t
 is pointing at — but the change itself lands in the analyst-prep-kit repo, where the item
 is written up in full as **[P4]** at the top of that ROADMAP.
 
-PrepLoop's stake: the miss list reads each kit's `<prefix>-recalls` queue, and that queue
-is written when a learner rates a lesson low or mid confidence. Take out the in-lesson
-recall CARDS and the miss list keeps working. Take out the confidence rater as well and
-the miss list goes permanently empty — PrepLoop would be sending people to a review home
-with nothing in it, and the two Recall sweep nodes on the Guided path would always
-celebrate a clean sweep.
+**Decision (Mike, 2026-07-27): remove both** — the in-lesson recall cards and the
+confidence rater. "We are autotracking mistakes now, or should be elsewhere."
 
-So: whatever the kits do, the confidence rater and the queue writes stay. If Mike wants
-recall gone from the kits entirely, PrepLoop needs its own source of misses before that
-ships (wrong Quick Check answers would be the obvious substitute, and PrepLoop does not
-read those today). Blocking question is recorded on [P4].
+Checked before filing, and the concern that prompted the question does not apply: the
+confidence rater is already gone from all 6 kits (only the boot-time migration that
+deletes `state.confidence` remains), and the `<prefix>-recalls` queue is already fed by
+**auto-recorded misses** — `recordMiss()` writes every wrong cue to `state.misses`, and
+`_queueRecalls()` only schedules a lesson's cues when that lesson has misses. So the miss
+list PrepLoop reads keeps filling on its own, and the Recall sweep nodes keep working.
 
-Status: **blocked on Mike's answer to [P4]; no PrepLoop work until then.**
+**PrepLoop impact: none.** No change needed here. The work is six edits in
+analyst-prep-kit (drop the mid-lesson `#v2-recalls` block; keep the queue, the misses and
+the kits' own on-demand Review view). Tracked as [P4] there.
+
+Status: **no PrepLoop work. Closed.**
 
 ## Also parked
 - Sync PrepLoop path progress (`pathDone`, `pathLog`, badges) to Supabase for signed-in users (premium brick; kits' `user_progress` table pattern is the model).
