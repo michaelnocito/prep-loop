@@ -145,6 +145,15 @@ html[data-theme="dark"] .pmap-node.current .pmap-dot{color:#082032}
 #timer.over{color:var(--warn)}
 #frame-wrap{flex:1;position:relative}
 #frame-wrap iframe{width:100%;height:100%;border:none;background:#fff}
+/* primer: orientation before the clock starts */
+.primer{height:100%;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:6vh 20px 20px}
+.primer-card{max-width:520px;width:100%}
+.primer-eyebrow{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-bottom:6px}
+.primer-title{font-size:22px;margin:0 0 8px}
+.primer-line{font-size:14px;color:var(--dim);margin:0 0 12px;line-height:1.5}
+.primer-do{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:8px;padding:12px 14px;font-size:15px;line-height:1.5;margin-bottom:18px}
+.primer-do-label{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);font-weight:800;margin-bottom:4px}
+.primer-foot{font-size:12px;color:var(--dim);margin:12px 0 0}
 .no-embed{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;color:var(--dim);text-align:center;padding:20px}
 
 /* journey journal */
@@ -684,7 +693,7 @@ function renderPath(){
         <div style="flex:1">
           <div class="pmap-title"><span class="chip ${n.chip}">${n.type==='lesson'?n.kit.toUpperCase():(CAT_LABEL[n.cat]||'APP')}</span>${n.title}${auto?' <span class="auto-note">✓ synced from kit</span>':''}</div>
           <div class="pmap-sub">${n.concepts}</div>
-          <div class="pmap-meta">${n.min} min sitting${n.type==='lesson'?' · start: lesson '+n.lessons[0]+' · stop after: lesson '+n.lessons[n.lessons.length-1]:''}${n.type==='miss'?' · '+(getKitMisses().length?getKitMisses().length+' topics queued right now':'queue is clean right now 🛡️'):''}</div>
+          <div class="pmap-meta">${n.min} min sitting${n.type==='lesson'?' · lessons '+n.lessons.join(', ')+', in that order':''}${n.type==='miss'?' · '+(getKitMisses().length?getKitMisses().length+' topics queued right now':'queue is clean right now 🛡️'):''}</div>
           ${isCur?`<button class="btn btn-sm" data-go="${n.id}">▶ Start this sitting</button>`:''}
           ${!isDone&&!isCur?`<button class="btn-ghost btn-sm" data-go="${n.id}" style="margin-top:8px">Jump here</button>`:''}
           ${isDone&&S.pathDone.includes(n.id)?`<button class="btn-ghost btn-sm" data-undo="${n.id}" style="margin-top:8px">Undo</button>`:''}
@@ -879,7 +888,8 @@ function startNode(id){
   const url=n.type==='lesson'?lessonURL(n.kit,n.lessons[0]):n.url;
   openSession({kind:'node',id:n.id,min:n.min,name:n.title,concepts:n.concepts,chip:n.chip,
     label:n.type==='lesson'?n.kit.toUpperCase():(CAT_LABEL[n.cat]||'APP'),url,local:n.local,
-    stopNote:n.type==='lesson'?('Do lessons '+n.lessons.join(', ')+' then stop and hit Done.'):null});
+    stopNote:n.type==='lesson'?('Do lessons '+n.lessons.join(', ')+' then stop and hit Done.'):null,
+    howTo:n.howTo||(n.type==='lesson'?'The lesson opens with a DO THIS strip across the top. Do that one thing, then work down the page.':null)});
 }
 function openMissSession(n){
   active={kind:'node',id:n.id,min:n.min,name:n.title,chip:n.chip,label:'RECALL'};
@@ -980,9 +990,28 @@ function openSession(a){
   $('s-name').textContent=a.name;
   $('s-concepts').textContent=(a.stopNote?a.stopNote+' · ':'')+(a.concepts||'');
   const fw=$('frame-wrap');fw.innerHTML='';
-  mount(a);
   $('session').classList.remove('hidden');
-  beginTimer(a.min);
+  primeSession(a);
+}
+// The clock used to start the instant the frame mounted, so the minutes spent working out a
+// strange interface were charged against the sitting — and charged while the user watched.
+// Orientation happens here instead, with the timer parked.
+function primeSession(a){
+  clearInterval(timerInt);timerInt=null;
+  remaining=a.min*60;paused=true;renderTimer();
+  const fw=$('frame-wrap');fw.innerHTML='';
+  const box=document.createElement('div');box.className='primer';
+  box.innerHTML=`<div class="primer-card">
+    <div class="primer-eyebrow">Next sitting · ${a.min} min</div>
+    <h3 class="primer-title">${a.name}</h3>
+    ${a.concepts?`<p class="primer-line">${a.concepts}</p>`:''}
+    <div class="primer-do"><span class="primer-do-label">First move</span>${a.howTo||'Take a few seconds to look before you touch anything. Find the main panel, then find the button that runs or starts something.'}</div>
+    ${a.stopNote?`<p class="primer-line">${a.stopNote}</p>`:''}
+    <button class="btn primer-go">Open it and start the clock →</button>
+    <p class="primer-foot">The countdown sets a pace. It is not a score, and nothing happens when it reaches zero.</p>
+  </div>`;
+  box.querySelector('.primer-go').onclick=()=>{fw.innerHTML='';mount(a);beginTimer(a.min);};
+  fw.appendChild(box);
 }
 function mount(a){
   const fw=$('frame-wrap');
